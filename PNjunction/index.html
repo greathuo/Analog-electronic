@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PN结的形成 - 模拟电子技术</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .theory-box {
+            margin-top: 25px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
+
+        .theory-text {
+            color: #34495e;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .pn-label {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 1px;
+            color: rgb(0, 0, 0);
+        }
+
+        .pn-junction-box {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            background: #fafbfc;
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            margin: 0 0 30px 0;
+            overflow: hidden;
+        }
+
+        .p-region {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: rgb(0, 0, 0);
+        }
+
+        .n-region {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(2, 113, 132, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: rgb(0, 0, 0);
+        }
+
+        .depletion-layer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            opacity: 0;
+            transition: all 0.8s ease;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        .carrier {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transition: all 1s ease;
+            z-index: 1;
+        }
+
+        .hole {
+            background: rgb(255, 255, 255);
+            box-shadow: 0 0 6px rgb(255,255,255);
+        }
+
+        .electron {
+            background: rgb(255, 0, 0);
+            box-shadow: 0 0 6px rgb(255, 0, 0);
+        }
+
+        .electric-field {
+            position: absolute;
+            left: 50%;
+            top: 6%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 30px;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            text-align: center;
+            line-height: 30px;
+            color: black;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 20;
+        }
+        /* 独立箭头容器：下方纵向排布 */
+        .arrow-wrap{
+            position:absolute;
+            left:50%;
+            top:20px;
+            transform:translateX(-50%);
+            display:flex;
+            flex-direction:column;
+            justify-content:space-evenly;
+            height:120px;
+        }
+        .long-arrow{
+            font-size:40px;
+            color:yellow;
+            letter-spacing:2px;
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #3498db;
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .control-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .reset-btn {
+            background: #e67e22;
+        }
+
+        .step-btn {
+            background: #2ecc71;
+        }
+
+        .pause-btn {
+            background: #f39c12;
+        }
+
+        .status-box {
+            text-align: center;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            margin: 20px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            color: #2c3e50;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">PN结的形成</h1>
+    <div class="theory-box">
+        <p class="theory-text">
+        1. <strong>初始状态</strong>：P区多子为空穴，N区多子为自由电子，界面无相互作用<br>
+        2. <strong>扩散运动</strong>：P区空穴、N区自由电子因浓度差向对方区域扩散<br>
+        3. <strong>空间电荷区（耗尽层）</strong>：扩散后留下不可移动的正负离子，形成电场<br>
+        4. <strong>内电场</strong>：阻止多子扩散，促进少子漂移运动<br>
+        5. <strong>动态平衡</strong>：扩散电流 = 漂移电流，对外无电流，PN结形成
+        </p>
+    </div>
+
+    <div class="pn-label">
+        <div>P 型<br>（空穴多）</div>
+        <div>N 型<br>（自由电子多）</div>
+    </div>
+
+    <div class="pn-junction-box">
+        <div class="p-region"></div>
+        <div class="n-region"></div>
+        <div class="depletion-layer" id="depletionLayer"></div>
+        
+        <!-- 文字保持原位置不动 -->
+        <div class="electric-field" id="eField">内电场
+            <!-- 独立箭头容器，跟随一同显隐 -->
+            <div class="arrow-wrap">
+                <div class="long-arrow">⟵</div>
+                <div class="long-arrow">⟵</div>
+                <div class="long-arrow">⟵</div>
+                <div class="long-arrow">⟵</div>
+                <div class="long-arrow">⟵</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <button class="control-btn" id="startBtn">开始演示</button>
+        <button class="control-btn step-btn" id="stepBtn">单步播放</button>
+        <button class="control-btn pause-btn" id="pauseBtn" disabled>暂停</button>
+        <button class="control-btn reset-btn" id="resetBtn">重置</button>
+    </div>
+
+    <div class="status-box" id="statusText">
+        初始状态：P区多子为空穴，N区自由电子，界面无相互作用
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusText = document.getElementById('statusText');
+        const depletionLayer = document.getElementById('depletionLayer');
+        const eField = document.getElementById('eField');
+        const pnBox = document.querySelector('.pn-junction-box');
+
+        let isPlaying = false;
+        let isPaused = false;
+        let currentStep = 0;
+        let animationTimer = null;
+
+        const steps = [
+            "步骤1：初始状态 → P区空穴浓度高，N区自由电子浓度高",
+            "步骤2：多子扩散运动 → 空穴向N区、电子向P区移动",
+            "步骤3：空间电荷区形成 → 界面出现正负离子区（耗尽层）",
+            "步骤4：内电场建立 → 阻止扩散，促进少子漂移",
+            "步骤5：动态平衡 → 扩散电流=漂移电流，PN结形成完成"
+        ];
+
+        function createCarriers() {
+            document.querySelectorAll('.carrier').forEach(c => {
+                c.remove();
+                c.style.opacity = 1;
+            });
+            for (let i = 0; i < 12; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'carrier hole';
+                hole.style.left = `${Math.random() * 45 + 5}%`;
+                hole.style.top = `${Math.random() * 80 + 10}%`;
+                pnBox.appendChild(hole);
+            }
+            for (let i = 0; i < 12; i++) {
+                const electron = document.createElement('div');
+                electron.className = 'carrier electron';
+                electron.style.left = `${Math.random() * 45 + 50}%`;
+                electron.style.top = `${Math.random() * 80 + 10}%`;
+                pnBox.appendChild(electron);
+            }
+        }
+
+        function hideCarriersInDepletion() {
+            const carriers = document.querySelectorAll('.carrier');
+            const dRect = depletionLayer.getBoundingClientRect();
+            carriers.forEach(carrier => {
+                const cRect = carrier.getBoundingClientRect();
+                const overlapX = !(cRect.right < dRect.left || cRect.left > dRect.right);
+                if(overlapX){
+                    carrier.style.opacity = "0";
+                }
+            });
+        }
+
+        function runStep(step) {
+            currentStep = step;
+            statusText.textContent = steps[step];
+            switch (step) {
+                case 0:
+                    depletionLayer.style.width = '0';
+                    depletionLayer.style.opacity = '0';
+                    eField.style.opacity = '0';
+                    createCarriers();
+                    break;
+                case 1:
+                    document.querySelectorAll('.hole').forEach(h => {
+                        h.style.left = `${parseInt(h.style.left) + 35}%`;
+                    });
+                    document.querySelectorAll('.electron').forEach(e => {
+                        e.style.left = `${parseInt(e.style.left) - 35}%`;
+                    });
+                    break;
+                case 2:
+                    depletionLayer.style.width = '50px';
+                    depletionLayer.style.opacity = '0.8';
+                    setTimeout(hideCarriersInDepletion, 400);
+                    break;
+                case 3:
+                    eField.style.opacity = '1';
+                    break;
+                case 4:
+                    statusText.textContent = "✅ 完成：PN结已形成，达到动态平衡状态";
+                    break;
+            }
+        }
+
+        function autoPlay() {
+            if (currentStep >= 4 || isPaused) return;
+            runStep(currentStep + 1);
+            animationTimer = setTimeout(autoPlay, 1800);
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (isPlaying) return;
+            isPlaying = true;
+            isPaused = false;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            stepBtn.disabled = true;
+            autoPlay();
+        });
+
+        stepBtn.addEventListener('click', () => {
+            if (currentStep < 4) {
+                runStep(currentStep + 1);
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? '继续' : '暂停';
+            if (!isPaused) {
+                autoPlay();
+            } else {
+                clearTimeout(animationTimer);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clearTimeout(animationTimer);
+            isPlaying = false;
+            isPaused = false;
+            currentStep = 0;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stepBtn.disabled = false;
+            pauseBtn.textContent = '暂停';
+            runStep(0);
+        });
+
+        window.onload = () => {
+            createCarriers();
+        };
+    </script>
+</body>
+</html>

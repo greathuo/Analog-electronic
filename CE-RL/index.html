@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>负载电阻对共射放大电路输出负载线的影响</title>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$','$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f5f5;color:#333;max-width:600px;margin:0 auto;padding:20px;line-height:1.6}
+        p{text-indent:2em;line-height:1.8;margin-bottom:10px}
+        h1{font-size:24px;text-align:center;margin-bottom:20px;color:#222}
+        
+        .text-image-row{display:flex;align-items:flex-start;gap:12px}
+        .text-image-row .text{flex:1}
+        .text-image-row img{width:180px;height:auto}
+        
+        .switch-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+        .switch-row p{margin:0!important;flex:1}
+        .small-margin{margin-bottom:12px;text-indent:0}
+        
+        .switch{position:relative;display:inline-block;width:50px;height:24px}
+        .switch input{opacity:0;width:0;height:0}
+        .slider-switch{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.4s;border-radius:24px}
+        .slider-switch:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.4s;border-radius:50%}
+        input:checked+.slider-switch{background:#409eff}
+        input:checked+.slider-switch:before{transform:translateX(26px)}
+        
+        .rc-img-line{position:relative;width:90%;margin:15px auto 20px}
+        .rc-img-line img{width:100%;display:block}
+        .rc-radio-group{display:flex;gap:20px;margin:5px 0 15px;font-size:16px;flex-wrap:wrap}
+        .rc-radio-item{display:flex;align-items:center;gap:6px;cursor:pointer}
+        
+        .vertical-dash,.vertical-dash-q,.vertical-dash-right{position:absolute;width:2px;z-index:5}
+        .vertical-dash{height:70%;border-left:2px dashed #5c5d5f;top:30%;left:14%}
+        .vertical-dash-q{height:45%;border-left:2px dashed #ff3333;top:55%;left:43.2%}
+        .vertical-dash-right{height:8%;border-left:2px dashed #0066ff;top:92%;left:85%;transition:left .5s}
+        
+        .uom1-label,.uom2-label{position:absolute;top:95%;transform:translateX(-50%);z-index:15;font-size:18px;font-weight:bold;color:#000;white-space:nowrap}
+        .uom1-label{left:28.6%}
+        .uom2-label{transition:left .5s}
+        
+        .arrow-left-uom1,.arrow-right-uom1,.arrow-left-uom2,.arrow-right-uom2{position:absolute;top:96%;height:2px;background:#000;z-index:14}
+        .arrow-left-uom1{left:33%;width:10%}
+        .arrow-right-uom1{left:14%;width:9%}
+        .arrow-left-uom2{left:43.2%;transition:width .5s}
+        .arrow-right-uom2{transition:left .5s,width .5s}
+        
+        .arrow-left-uom1::after,.arrow-right-uom2::after{content:'';position:absolute;right:0;top:-4px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #000}
+        .arrow-right-uom1::before,.arrow-left-uom2::before{content:'';position:absolute;left:0;top:-4px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:8px solid #000}
+        
+        [class*="line-rc-"],[class*="dot-rc-"],[class*="text-rc-"],[class*="rc-q-"],.rc-coord-a,.rc-coord-b{transition:.5s;opacity:0;visibility:hidden}
+        .rc-show{opacity:1!important;visibility:visible!important}
+        
+        .line-rc-red{position:absolute;width:70%;height:3px;background:#ff3333;top:52%;left:7.2%;transform:rotate(60deg);z-index:10}
+        .line-rc-green{position:absolute;width:82%;height:3px;background:#035203;top:57%;left:4.3%;transform:rotate(40deg);z-index:10}
+        .line-rc-blue{position:absolute;width:94%;height:3px;background:#0066ff;top:57%;left:-1%;transform:rotate(34deg);z-index:10}
+        
+        .dot-rc-red,.dot-rc-green,.dot-rc-blue{position:absolute;width:14px;height:14px;background:red;border-radius:50%;top:53.5%;left:42%;z-index:12}
+        .text-rc-red{position:absolute;color:#cc0000;font-size:16px;top:21%;left:17%;z-index:11}
+        .text-rc-green{position:absolute;color:#035203;font-size:16px;top:21%;left:22%;z-index:11}
+        .text-rc-blue{position:absolute;color:#0066ff;font-size:16px;top:20%;left:19%;z-index:11}
+        .rc-q-red,.rc-q-green,.rc-q-blue{position:absolute;color:red;font-size:18px;font-weight:bold;top:42%;left:42%;z-index:13}
+        .rc-coord-a,.rc-coord-b{position:absolute;font-size:14px;z-index:11}
+        .rc-coord-a{top:33%;left:-5%}
+        .rc-coord-b{top:92%;left:83%}
+    </style>
+</head>
+<body>
+    <h1>负载电阻对CE电路输出负载线的影响</h1>
+
+    <div class="text-image-row">
+        <div class="text">
+            <p>分压式电流负反馈放大电路中，负载电阻$R_{\mathrm{L}}$不会影响电路静态工作点$\mathrm{Q}$的位置，
+                但会影响输出负载线的斜率，进而影响最大不失真输出电压。</p>
+        </div>
+        <img src="images/CE.png" alt="共射放大电路">
+    </div>
+
+    <div class="switch-row">
+        <p class="small-margin">改变负载电阻$R_{\mathrm{L}}$大小对负载线的影响。</p>
+    </div>
+    
+    <div class="rc-content-wrapper">
+        <div class="rc-radio-group">
+            <label class="rc-radio-item"><input type="radio" name="rcSel" value="small"> $R_\mathrm{L}$ 较小</label>
+            <label class="rc-radio-item"><input type="radio" name="rcSel" value="large"> $R_\mathrm{L}$ 较大</label>
+            <label class="rc-radio-item"><input type="radio" name="rcSel" value="infinite" checked> $R_\mathrm{L}$ 无穷大</label>
+        </div>
+        
+        <div class="rc-img-line">
+            <img src="images/output_curve.png">
+            <div class="vertical-dash"></div>
+            <div class="vertical-dash-q"></div>
+            <div class="vertical-dash-right"></div>
+
+            <div class="arrow-left-uom1"></div>
+            <div class="arrow-right-uom1"></div>
+            <div class="uom1-label">$U_\mathrm{om1}$</div>
+
+            <div class="arrow-left-uom2"></div>
+            <div class="arrow-right-uom2"></div>
+            <div class="uom2-label">$U_\mathrm{om2}$</div>
+
+            <div class="line-rc-red"></div><div class="dot-rc-red"></div><div class="text-rc-red">$-\dfrac{1}{R_\mathrm{L}^{'}}$</div><div class="rc-q-red">$\mathrm{Q}$</div>
+            <div class="line-rc-green"></div><div class="dot-rc-green"></div><div class="text-rc-green">$-\dfrac{1}{R_\mathrm{L}^{'}}$</div><div class="rc-q-green">$\mathrm{Q}$</div>
+            <div class="line-rc-blue"></div><div class="dot-rc-blue"></div><div class="text-rc-blue">$-\dfrac{1}{R_\mathrm{C}}$</div><div class="rc-q-blue">$\mathrm{Q}$</div>
+        </div>
+    </div>
+
+    <div class="switch-row">
+        <p class="small-margin">最大不失真输出电压$U_{\mathrm{om}}=\min[U_{\mathrm{om1}},U_{\mathrm{om2}}]$</p>
+    </div>
+
+    <script>
+        (function(){
+            const els = {
+                radios: document.querySelectorAll('input[name="rcSel"]'),
+                groups: [
+                    document.querySelectorAll('.line-rc-red, .dot-rc-red, .text-rc-red, .rc-q-red'),
+                    document.querySelectorAll('.line-rc-green, .dot-rc-green, .text-rc-green, .rc-q-green'),
+                    document.querySelectorAll('.line-rc-blue, .dot-rc-blue, .text-rc-blue, .rc-q-blue')
+                ],
+                dash: document.querySelector('.vertical-dash-right'),
+                uom2: document.querySelector('.uom2-label'),
+                arrL: document.querySelector('.arrow-left-uom2'),
+                arrR: document.querySelector('.arrow-right-uom2'),
+                coordA: document.querySelector('.rc-coord-a'),
+                coordB: document.querySelector('.rc-coord-b')
+            };
+
+            const configs = {
+                small:  { dash:59,  uom2:51.1, arrL:6.5,  arrR:[55.7,3.3],  a:0, b:1 },
+                large:  { dash:76,  uom2:59.6, arrL:15,   arrR:[64.2,11.8], a:1, b:1 },
+                infinite:{dash:85,  uom2:64.1, arrL:19.5, arrR:[68.7,16.3], a:1, b:1 }
+            };
+
+            function update(){
+                const val = document.querySelector('input[name="rcSel"]:checked').value;
+                const cfg = configs[val];
+                
+                els.groups.forEach(g => g.forEach(e => e.classList.remove('rc-show')));
+                val === 'small' && els.groups[0].forEach(e => e.classList.add('rc-show'));
+                val === 'large' && els.groups[1].forEach(e => e.classList.add('rc-show'));
+                val === 'infinite' && els.groups[2].forEach(e => e.classList.add('rc-show'));
+
+                els.dash.style.left = cfg.dash + '%';
+                els.uom2.style.left = cfg.uom2 + '%';
+                els.arrL.style.width = cfg.arrL + '%';
+                els.arrR.style.left = cfg.arrR[0] + '%';
+                els.arrR.style.width = cfg.arrR[1] + '%';
+                els.coordA.style.opacity = cfg.a;
+                els.coordB.style.opacity = cfg.b;
+            }
+
+            els.radios.forEach(r => r.addEventListener('change', update));
+            update();
+        })();
+    </script>
+</body>
+</html>
