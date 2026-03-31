@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PN结的扩散电容</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        *{box-sizing:border-box;}
+        body{background:#fff;}
+        canvas{display:block;width:100%;}
+        .label-top{text-align:center;margin-bottom:6px;font-weight:bold;}
+    </style>
+</head>
+<body class="p-4 md:p-6 max-w-5xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-bold text-center text-[#2c3e50] mb-4">PN结的扩散电容</h1>
+
+    <div class="mb-6 text-[#2c2c2c] leading-relaxed">
+        <p>PN结正偏时，累积在P区和N区的非平衡少子随正向电压的增加而很快增多，扩散电容较大。</p>
+        <p>正偏电压越大，耗尽层越窄，注入非平衡少子越多，扩散电容增大。</p>
+    </div>
+
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-0">P区/N区非平衡少子浓度分布</h2>
+        <canvas id="pnCanvas" height="200" class="mb-0"></canvas>
+
+        <div class="flex gap-8 mb-4">
+            <div class="flex-1">
+                <div class="label-top text-blue-900">P区掺杂浓度</div>
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-600">低</span>
+                    <input type="range" id="naSlider" min="0" max="1" step="0.01" value="0.5"
+                           class="flex-1 h-2 bg-gray-200 rounded-lg">
+                    <span class="text-gray-600">高</span>
+                </div>
+            </div>
+
+            <div class="flex-1">
+                <div class="label-top text-red-600">N区掺杂浓度</div>
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-600">低</span>
+                    <input type="range" id="ndSlider" min="0" max="1" step="0.01" value="0.5"
+                           class="flex-1 h-2 bg-gray-200">
+                    <span class="text-gray-600">高</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-0 flex-wrap mb-4">
+            <label class="font-semibold w-20 shrink-0">正偏电压</label>
+            <div class="flex items-center gap-1">
+                <span class="text-gray-600">低</span>
+                <input type="range" id="voltSlider" min="0.1" max="0.7" step="0.01" value="0.3"
+                   class="flex-1 max-w-md h-2 bg-gray-200 rounded-lg">
+                <span class="text-gray-600">高</span>
+            </div>
+            <canvas id="cvCanvas" height="250"></canvas>
+        </div>
+    </div>
+
+<script>
+const VT = 0.026;
+let Vf = 0.3;
+let dopP = 0.5;
+let dopN = 0.5;
+
+const voltSlider = document.getElementById('voltSlider');
+const naSlider = document.getElementById('naSlider');
+const ndSlider = document.getElementById('ndSlider');
+
+const pnCanvas = document.getElementById('pnCanvas');
+const cvCanvas = document.getElementById('cvCanvas');
+const pnCtx = pnCanvas.getContext('2d');
+const cvCtx = cvCanvas.getContext('2d');
+
+function resizeCanvas(){
+    pnCanvas.width = pnCanvas.clientWidth;
+    cvCanvas.width = cvCanvas.clientWidth;
+    renderAll();
+}
+window.addEventListener('resize', resizeCanvas);
+
+voltSlider.oninput = ()=>{
+    Vf = parseFloat(voltSlider.value);
+    renderAll();
+};
+naSlider.oninput = ()=>{
+    dopP = parseFloat(naSlider.value);
+    renderAll();
+};
+ndSlider.oninput = ()=>{
+    dopN = parseFloat(ndSlider.value);
+    renderAll();
+};
+
+function renderAll(){
+    drawPNWithCarrierCurve();
+    drawCVChart();
+}
+
+function getDepletionWidth(){
+    const minW = 12;
+    const maxW = 55;
+    const ratio = (0.7 - Vf) / (0.7 - 0.1);
+    return minW + ratio * (maxW - minW);
+}
+
+function drawPNWithCarrierCurve(){
+    const W = pnCanvas.width;
+    const H = pnCanvas.height;
+    pnCtx.clearRect(0,0,W,H);
+
+    const centerX = W * 0.5;
+    const depW = getDepletionWidth();
+    const depL = centerX - depW / 2;
+    const depR = centerX + depW / 2;
+
+    const areaTop = 40;
+    const areaBot = H - 40;
+    const areaHeight = areaBot - areaTop;
+    const maxCurveH = areaHeight * 0.75;
+    const baseY = areaBot;
+
+    pnCtx.fillStyle = "rgba(0, 0, 255, 0.8)";
+    pnCtx.fillRect(0, areaTop, depL, areaHeight);
+
+    let grd = pnCtx.createLinearGradient(depL,0,depR,0);
+    grd.addColorStop(0,"#ff6b6b");
+    grd.addColorStop(1,"#4ecdc4");
+    pnCtx.fillStyle = grd;
+    pnCtx.fillRect(depL, areaTop, depW, areaHeight);
+
+    pnCtx.fillStyle = "rgba(2, 113, 132, 0.8)";
+    pnCtx.fillRect(depR, areaTop, W - depR, areaHeight);
+
+    pnCtx.font="16px sans-serif";
+    pnCtx.fillStyle="#fff";
+    pnCtx.textAlign="center";
+    pnCtx.fillText("P区", depL / 2, areaTop + 25);
+    pnCtx.fillText("耗尽层", centerX, areaTop + 25);
+    pnCtx.fillText("N区", (depR + W) / 2, areaTop + 25);
+
+    const expRaw = Math.exp((Vf - 0.12) / VT);
+    const scaleSafe = Math.log(1 + expRaw) / Math.log(1 + Math.exp((0.7-0.12)/VT));
+
+    const ampP = maxCurveH * (0.2 + dopN * 3) * scaleSafe;
+    const ampN = maxCurveH * (0.2 + dopP * 3) * scaleSafe;
+
+    pnCtx.strokeStyle="#ffff00";
+    pnCtx.lineWidth=3;
+    pnCtx.beginPath();
+    for(let x=depL;x>20;x--){
+        let d=depL-x;
+        let r=Math.exp(-d/70);
+        let y=baseY - ampP*r;
+        if(x===depL)pnCtx.moveTo(x,y);else pnCtx.lineTo(x,y);
+    }
+    pnCtx.stroke();
+
+    pnCtx.strokeStyle="#ffffff";
+    pnCtx.lineWidth=3;
+    pnCtx.beginPath();
+    for(let x=depR;x<W-20;x++){
+        let d=x-depR;
+        let r=Math.exp(-d/70);
+        let y=baseY - ampN*r;
+        if(x===depR)pnCtx.moveTo(x,y);else pnCtx.lineTo(x,y);
+    }
+    pnCtx.stroke();
+
+    pnCtx.font = "14px sans-serif";
+    pnCtx.textAlign = "center";
+    pnCtx.fillStyle = "#ffff00";
+    pnCtx.fillText("非平衡少子（自由电子）", depL - 80, baseY - 5);
+    pnCtx.fillStyle = "#ffffff";
+    pnCtx.fillText("非平衡少子（空穴）", depR + 80, baseY - 5);
+}
+
+function calcCd(v,dp,dn){
+    const k = (1 + dp*3) + (1 + dn*3);
+    return k * Math.exp(v / VT);
+}
+
+function drawCVChart(){
+    const W=cvCanvas.width,H=cvCanvas.height;
+    cvCtx.clearRect(0,0,W,H);
+    const pad=40;
+    const maxV=0.705;
+    const minV=0;
+
+    // 弯曲部分偏移强度
+    const bendShift = (dopP + dopN) * 0.18;
+
+    cvCtx.strokeStyle="#333";
+    cvCtx.lineWidth=1.5;
+
+    // Y轴
+    cvCtx.beginPath();
+    cvCtx.moveTo(pad, H-pad);
+    cvCtx.lineTo(pad, pad);
+    cvCtx.moveTo(pad, pad);
+    cvCtx.lineTo(pad-6, pad+10);
+    cvCtx.moveTo(pad, pad);
+    cvCtx.lineTo(pad+6, pad+10);
+    cvCtx.stroke();
+
+    // X轴
+    cvCtx.beginPath();
+    cvCtx.moveTo(pad, H-pad);
+    cvCtx.lineTo(W-pad, H-pad);
+    cvCtx.moveTo(W-pad, H-pad);
+    cvCtx.lineTo(W-pad-10, H-pad-6);
+    cvCtx.moveTo(W-pad, H-pad);
+    cvCtx.lineTo(W-pad-10, H-pad+6);
+    cvCtx.stroke();
+
+    cvCtx.strokeStyle="#e53e3e";
+    cvCtx.lineWidth=3;
+    cvCtx.beginPath();
+
+    const maxCd=calcCd(maxV, dopP, dopN);
+
+    for(let v=minV;v<=maxV;v+=0.005){
+        // 关键：v=0时 shift=0，原点固定不动
+        // v越大，偏移越大 → 弯曲上端向左偏移
+        let ratio = v / maxV;   
+        let realV = v + bendShift * ratio; 
+
+        let cd=calcCd(realV, dopP, dopN);
+        let x = pad + (v-minV)/(maxV-minV)*(W-2*pad);
+        let y = H-pad - cd/maxCd*(H-2*pad);
+
+        if(v === minV) cvCtx.moveTo(x,y);
+        else cvCtx.lineTo(x,y);
+    }
+    cvCtx.stroke();
+
+    // 红点跟随偏移逻辑
+    let ratioNow = Vf / maxV;
+    let realVf = Vf + bendShift * ratioNow;
+    let nowCd=calcCd(realVf, dopP, dopN);
+    let px = pad + (Vf-minV)/(maxV-minV)*(W-2*pad);
+    let py = H-pad - nowCd/maxCd*(H-2*pad);
+    cvCtx.fillStyle="#ff0000";
+    cvCtx.beginPath();
+    cvCtx.arc(px,py,7,0,2*Math.PI);
+    cvCtx.fill();
+
+    cvCtx.fillStyle="#222";
+    cvCtx.font="14px sans-serif";
+    cvCtx.textAlign="center";
+    cvCtx.fillText("正偏电压",W/2,H-10);
+    cvCtx.save();
+    cvCtx.translate(15,H/2);
+    cvCtx.rotate(-Math.PI/2);
+    cvCtx.fillText("扩散电容",0,0);
+    cvCtx.restore();
+}
+
+resizeCanvas();
+</script>
+</body>
+</html>
