@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PN结的势垒电容</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: #fff;
+            padding: 20px;
+            min-height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .theory-text {
+            color: #34495e;
+            line-height: 1.7;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .pn-label {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 1px;
+            color: #000;
+        }
+
+        .pn-junction-box {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            background: #fafbfc;
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            margin: 0 0 20px 0;
+            overflow: hidden;
+        }
+
+        .p-region {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .n-region {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: rgba(2, 113, 132, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .depletion-layer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            opacity: 0.8;
+            transition: all 0.6s ease;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        .label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            color: #333;
+            margin-left: 60px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0 15px 0;
+        }
+
+        .formula {
+            font-size: 18px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            accent-color: #3498db;
+        }
+
+        .chart-box {
+            width: 100%;
+            height: 300px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PN结的势垒电容</h1>
+
+    <p class="theory-text">势垒电容定义：PN结耗尽层宽度随外加电压改变，电荷量随之变化，等效为电容，称为势垒电容$C_\mathrm{b}$。</p>
+    <p class="theory-text">变化规律：</p>
+    <p class="theory-text">• 反向电压增大 → 耗尽层宽度$W$变宽 → 势垒电容 <span style="color:red;font-weight:bold">减小</span></p>
+    <p class="theory-text">• 正向电压增大 → 耗尽层宽度$W$变窄 → 势垒电容 <span style="color:green;font-weight:bold">增大</span></p>
+
+    <div class="pn-label">
+        <div>P 型</div>
+        <div>N 型</div>
+    </div>
+    <div class="pn-junction-box">
+        <div class="p-region"></div>
+        <div class="n-region"></div>
+        <div class="depletion-layer" id="depletionLayer"></div>
+    </div>
+
+    <div class="label">
+        <span>-10V 反偏</span>
+        <span>0V 零偏</span>
+        <span>+0.6V 正偏</span>
+    </div>
+    <div class="slider-container">
+        <div class="formula">$V$</div>
+        <input type="range" id="voltSlider" min="-10" max="0.6" step="0.05" value="0">
+    </div>
+
+    <div class="chart-box">
+        <canvas id="cjChart"></canvas>
+    </div>
+
+<script>
+    const Vbi = 0.7;
+    const ctx = document.getElementById('cjChart').getContext('2d');
+
+    // 生成曲线数据
+    const dataPoints = [];
+    for (let v = -10; v <= 0.6; v += 0.05) {
+        let eff = Math.max(Vbi - v, 0.1);
+        let w = Math.sqrt(eff);
+        let cb = 1 / w;
+        dataPoints.push({ v: parseFloat(v.toFixed(2)), cb: cb });
+    }
+
+    // 初始化红点
+    let initialPoint = Array(dataPoints.length).fill(null);
+    let startIndex = dataPoints.findIndex(p => Math.abs(p.v - 0) < 0.01);
+    initialPoint[startIndex] = dataPoints[startIndex].cb;
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dataPoints.map(p => p.v),
+            datasets: [
+                // 平滑曲线
+                {
+                    data: dataPoints.map(p => p.cb),
+                    borderColor: '#e53e3e',
+                    backgroundColor: 'rgba(229,62,62,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                },
+                // 红点
+                {
+                    data: initialPoint,
+                    borderColor: '#ff0000',
+                    backgroundColor: '#ff0000',
+                    pointRadius: 6,
+                    showLine: false
+                }
+            ]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            
+            scales: {
+                // ✅ 横坐标：只显示你要的数值
+                x: {
+                    title: { display: true, font:{size:14}, text:"PN结两端电压" },
+                    ticks: {
+                        // 强制显示指定刻度
+                        values: [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 0.5]
+                    }
+                },
+                // ✅ 纵坐标：不显示数值
+                y: {
+                    title: { display: true, font:{size:14}, text:"势垒电容" },
+                    ticks: { display: false }
+                }
+            }
+        }
+    });
+
+    const slider = document.getElementById('voltSlider');
+    const depletion = document.getElementById('depletionLayer');
+
+    function updateByVoltage(V) {
+        // 更新耗尽层
+        let effectiveV = Math.max(Vbi - V, 0.1);
+        const W = Math.sqrt(effectiveV);
+        const baseWidth = 60;
+        const maxW = Math.sqrt(Vbi + 10);
+        depletion.style.width = (baseWidth * (W / maxW)) + "px";
+
+        // 红点沿曲线移动
+        let index = dataPoints.findIndex(item => Math.abs(item.v - V) < 0.01);
+        if (index < 0) index = dataPoints.length - 1;
+        let pointData = Array(dataPoints.length).fill(null);
+        pointData[index] = dataPoints[index].cb;
+        chart.data.datasets[1].data = pointData;
+        chart.update('none');
+    }
+
+    slider.addEventListener('input', () => {
+        let V = parseFloat(slider.value);
+        updateByVoltage(V);
+    });
+
+    updateByVoltage(0);
+</script>
+</body>
+</html>
