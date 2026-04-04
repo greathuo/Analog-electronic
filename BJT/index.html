@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>双极型晶体管工作原理示意</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+        body{
+            font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+            background:#f5f5f5;
+            color:#333;
+            max-width:1000px;
+            margin:0 auto;
+            padding:8px;
+            line-height:1.6;
+            font-size: 15px;
+        }
+
+        p{text-indent:2em;line-height:1.7;margin-bottom:0 !important;}
+        h1{
+            font-size: 18px;
+            text-align:center;
+            margin-bottom:4px;
+            color:#222;
+        }
+
+        .text-image-row{
+            margin-bottom:0 !important;
+        }
+
+        .btn {
+            padding: 6px 10px;
+            background: #409eff;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .btn:hover {
+            background: #66b1ff;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 55vh;
+            max-height: 320px;
+            min-height: 240px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            margin: 0 auto !important;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: manipulation;
+            background: transparent;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top:-90px;
+            position: relative;
+            z-index: 999;
+            align-items: center;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #009f5d;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .slider {
+            width: 120px;
+            height: 6px;
+            appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #009f5d;
+            cursor: pointer;
+        }
+
+        .info-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 2px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .latex-tag {
+            position: absolute;
+            color: #009f5d;
+            font-weight: bold;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <h1>双极型晶体管工作原理示意</h1>
+
+    <div class="text-image-row">
+        <div class="text">
+            <p>双极型晶体管（BJT）是一种电流控制器件，由发射极、基极和集电极三个区域组成，通过基极电流控制集电极电流，实现信号放大或开关功能。</p>
+            <p>观察电流在NPN型BJT管中的流动路径，了解基极电流控制集电极电流。</p>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="circuitCanvas"></canvas>
+        <div class="latex-tag" id="tag_EB">\(E_\mathrm{B}\)</div>
+        <div class="latex-tag" id="tag_EC">\(E_\mathrm{C}\)</div>
+        <div class="latex-tag" id="tag_RB" style="color: #0000ff;">\(R_\mathrm{B}\)</div>
+        <div class="latex-tag" id="tag_T" style="color: #000000;">\(\mathrm{T}\)</div>
+    </div>
+
+    <div class="controls-row">
+        <button class="btn" onclick="toggleAnimation()">⏯️ 暂停/播放</button>
+        <button class="btn" onclick="resetView()">🔄 重置</button>
+        <button id="toggleBtn" class="btn" onclick="toggleDisplay()">⚡ 显示电流</button>
+        
+        <div id="ebSliderContainer" class="slider-container" style="display:none;">
+            <span>\(E_B\)</span>
+            <input type="range" id="ebSlider" class="slider" min="0" max="1" step="0.01" value="0">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('circuitCanvas');
+        const ctx = canvas.getContext('2d');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const tag_EB = document.getElementById('tag_EB');
+        const tag_EC = document.getElementById('tag_EC');
+        const tag_RB = document.getElementById('tag_RB');
+        const tag_T = document.getElementById('tag_T');
+        const ebSlider = document.getElementById('ebSlider');
+        const ebSliderContainer = document.getElementById('ebSliderContainer');
+
+        let width, height;
+        let animationId;
+        let isPlaying = true;
+        let showCarrier = true;
+        let time = 0;
+        let rotationX = 0;
+        let rotationY = 0;
+        let scale = 0.8;
+        let ebValue = 0;
+
+        const electrons = [];
+        let pathDistances = [];
+        let totalDistances = [];
+
+        function resize() {
+            const wrapper = canvas.parentElement;
+            width = canvas.width = wrapper.clientWidth;
+            height = canvas.height = wrapper.clientHeight;
+            const fitScale = Math.min(width / 800, height / 600) * 1.2;
+            scale = fitScale;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function project3D(x, y, z) {
+            const cosX = Math.cos(rotationX);
+            const sinX = Math.sin(rotationX);
+            const cosY = Math.cos(rotationY);
+            const sinY = Math.sin(rotationY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            return {
+                x: width/2 + x1 * scale,
+                y: height/2 + y2 * scale - 80,
+                scale: scale, z: z2
+            };
+        }
+
+        function updateLatexTags() {
+            const ebPos = project3D(-235, 150, 0);
+            const ecPos = project3D(150, 0, 0);
+            const rbPos = project3D(-175, -20, 0);
+            const tPos = project3D(10, 0, 0);
+            tag_EB.style.left = ebPos.x + 'px';
+            tag_EB.style.top = ebPos.y + 'px';
+            tag_EC.style.left = ecPos.x + 'px';
+            tag_EC.style.top = ecPos.y + 'px';
+            tag_RB.style.left = rbPos.x + 'px';
+            tag_RB.style.top = rbPos.y + 'px';
+            tag_T.style.left = tPos.x + 'px';
+            tag_T.style.top = tPos.y + 'px';
+        }
+
+        function drawLine3D(x1, y1, z1, x2, y2, z2, color, w = 3) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = w * p1.scale;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        function drawBar3D(x1, y1, z1, x2, y2, z2, color, thickness = 12) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            const dx = x2 - x1; const dy = y2 - y1;
+            const len = Math.hypot(dx, dy);
+            const ux = dx / len; const uy = dy / len;
+            const vx = -uy * thickness/2; const vy = ux * thickness/2;
+            const pts = [
+                {x: x1 + vx, y: y1 + vy, z: z1},
+                {x: x1 - vx, y: y1 - vy, z: z1},
+                {x: x2 - vx, y: y2 - vy, z: z2},
+                {x: x2 + vx, y: y2 + vy, z: z2}
+            ];
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            const p0 = project3D(pts[0].x, pts[0].y, pts[0].z);
+            ctx.moveTo(p0.x, p0.y);
+            for(let i=1; i<4; i++) {
+                const p = project3D(pts[i].x, pts[i].y, pts[i].z);
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawArrowHead3D(x, y, z, dx, dy, dz, color, size = 20) {
+            const p = project3D(x, y, z);
+            const s = p.scale;
+            const angle = Math.atan2(dy, dx);
+            const w = size * s * 0.5;
+            const l = size * s * 0.8;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - Math.cos(angle)*l + Math.sin(angle)*w, p.y - Math.sin(angle)*l - Math.cos(angle)*w);
+            ctx.lineTo(p.x - Math.cos(angle)*l - Math.sin(angle)*w, p.y - Math.sin(angle)*l + Math.cos(angle)*w);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawWire3D(x1, y1, z1, x2, y2, z2, thickness = 6) {
+            const p1 = project3D(x1, y1, z1);
+            const p2 = project3D(x2, y2, z2);
+            ctx.save();
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = thickness * p1.scale;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawResistor3D(x, y, z) {
+            const len = 80; const amp = 16; const zigzag = [];
+            for (let i = 0; i <= 8; i++) {
+                const t = i / 8;
+                const h = (i % 2 === 0 ? 0 : amp);
+                zigzag.push({x: x + (t - 0.5) * len, y: y + h, z: z});
+            }
+            ctx.strokeStyle = '#4169E1'; ctx.lineWidth = 4;
+            ctx.beginPath();
+            const start = project3D(zigzag[0].x, zigzag[0].y, zigzag[0].z);
+            ctx.moveTo(start.x, start.y);
+            for (let i = 1; i < zigzag.length; i++) {
+                const p = project3D(zigzag[i].x, zigzag[i].y, zigzag[i].z);
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.stroke();
+        }
+
+        function drawTransistor3D(cx, cy, cz) {
+            const barColor = '#555';
+            const barThickness = 6;
+            const lineThickness = 10;
+            const barLen = 50;
+
+            drawBar3D(cx - 35, cy - barLen, cz, cx - 35, cy + barLen, cz, barColor, barThickness);
+            
+            if (!showCarrier) {
+                const w2 = 2 + ebValue * 6;
+                const w6 = 5 + ebValue * 7;
+                const arrow12 = 10 + ebValue * 6;
+                const arrow16 = 16 + ebValue * 8;
+                const off12 = ebValue * 10;
+                const off16 = ebValue * 15;
+
+                drawLine3D(cx - 110, cy - 12, cz, cx - 70, cy - 12, cz, 'red', w2);
+                drawArrowHead3D(cx - 70 + off12, cy - 12, cz, 20, 0, 0, 'red', arrow12);
+                drawLine3D(cx - 280, cy - 12, cz, cx - 240, cy - 12, cz, 'red', w2);
+                drawArrowHead3D(cx - 240 + off12, cy - 12, cz, 20, 0, 0, 'red', arrow12);
+                drawLine3D(cx - 305, cy + 90, cz, cx - 305, cy + 50, cz, 'red', w2);
+                drawArrowHead3D(cx - 305, cy + 50 - off12, cz, 0, -20, 0, 'red', arrow12);
+                drawLine3D(cx - 260, cy + 105, cz, cx - 220, cy + 105, cz, 'red', w2);
+                drawArrowHead3D(cx - 220 + off12, cy + 105, cz, 20, 0, 0, 'red', arrow12);
+                drawLine3D(cx - 160, cy + 165, cz, cx - 120, cy + 165, cz, 'red', w2);
+                drawArrowHead3D(cx - 120 + off12, cy + 165, cz, 20, 0, 0, 'red', arrow12);
+                drawLine3D(cx - 60, cy + 165, cz, cx - 20, cy + 165, cz, 'red', w2);
+                drawArrowHead3D(cx - 20 + off12, cy + 165, cz, 20, 0, 0, 'red', arrow12);
+                drawLine3D(cx + 5, cy + 130, cz, cx + 5, cy + 90, cz, 'red', w2);
+                drawArrowHead3D(cx + 5, cy + 90 - off12, cz, 0, -20, 0, 'red', arrow12);
+
+                drawLine3D(cx + 135, cy - 60, cz, cx + 135, cy - 15, cz, 'red', w6);
+                drawArrowHead3D(cx + 135, cy - 65 - off16, cz, 0, -20, 0, 'red', arrow16);
+                drawLine3D(cx + 80, cy - 115, cz, cx + 40, cy - 115, cz, 'red', w6);
+                drawArrowHead3D(cx + 40 - off16, cy - 115, cz, -20, 0, 0, 'red', arrow16);
+                drawLine3D(cx + 35, cy - 45, cz, cx + 35, cy + 125, cz, 'red', w6);
+                drawArrowHead3D(cx + 35, cy + 130 + off16, cz, 0, 20, 0, 'red', arrow16);
+                drawLine3D(cx + 175, cy + 100, cz, cx + 175, cy + 140, cz, 'red', w6);
+                drawArrowHead3D(cx + 175, cy + 140 + off16, cz, 0, 20, 0, 'red', arrow16);
+                drawLine3D(cx + 85, cy + 165, cz, cx + 145, cy + 165, cz, 'red', w6);
+                drawArrowHead3D(cx + 145 + off16, cy + 165, cz, 20, 0, 0, 'red', arrow16);
+            }
+
+            drawWire3D(cx - 40, cy, cz, cx - 85 - barLen, cy, cz, lineThickness);
+            const cDx = barLen * 0.9; const cDy = -barLen * 0.7;
+            const cEndX = cx - 25 + cDx; const cEndY = cy - barLen*0.3 + cDy;
+            drawBar3D(cx - 35, cy - barLen*0.3, cz, cEndX, cEndY, cz, barColor, barThickness);
+            drawWire3D(cEndX, cEndY, cz, cEndX, cEndY - barLen, cz, lineThickness);
+            drawWire3D(cEndX+100, cEndY-barLen, cz, cEndX, cEndY - barLen, cz, lineThickness);
+            drawWire3D(cEndX+100, cEndY-barLen, cz, cEndX+100, cEndY - barLen+150, cz, lineThickness);
+
+            const eDx = barLen * 0.9; const eDy = barLen * 0.7;
+            const eX1 = cx - 35, eY1 = cy + barLen*0.3;
+            const eX2 = cx - 35 + eDx, eY2 = cy + barLen*0.3 + eDy;
+            drawBar3D(eX1, eY1, cz, eX2, eY2, cz, barColor, barThickness);
+            const eBottomY = eY2 + barLen + 80;
+            drawWire3D(eX2+12, eY2+10, cz, eX2+12, eBottomY+30, cz, lineThickness);
+            drawWire3D(eX2-10, eBottomY+30, cz, eX2 + 35, eBottomY+30, cz, lineThickness);
+            drawWire3D(eX2-200, eBottomY, cz, eX2 + 180, eBottomY, cz, lineThickness);
+            drawWire3D(eX2 + 180, eBottomY, cz, eX2 + 180, eBottomY-150, cz, lineThickness);
+            
+            const corner1X = cx - 240 - barLen; const corner1Y = cy;
+            const corner2X = eX2 - 300; const corner2Y = eBottomY - 60;
+            const p1 = project3D(cx - 220, cy, cz);
+            const p2 = project3D(corner1X, corner1Y, cz);
+            const p3 = project3D(corner2X, corner2Y, cz);
+            const p4 = project3D(eX2 - 200, eBottomY - 60, cz);
+
+            ctx.save();
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = lineThickness * p1.scale;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.stroke();
+            ctx.restore();
+
+            const batteryX = (p4.x + project3D(eX2-200, eBottomY, cz).x) / 2;
+            const batteryY = (p4.y + project3D(eX2-200, eBottomY, cz).y) / 2;
+            const batteryW = 15 * p1.scale; const batteryH = 30 * p1.scale;
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(batteryX, batteryY, batteryW, batteryH, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = '#009f5d'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = '#009f5d';
+            ctx.font = `${24 * p1.scale}px Arial bold`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('+', batteryX, batteryY - 10 * p1.scale);
+            ctx.fillText('-', batteryX, batteryY + 15 * p1.scale);
+            ctx.restore();
+
+            const L = project3D(cEndX + 100, cEndY - barLen + 75, cz);
+            const R = project3D(eX2 + 180, eBottomY - 75, cz);
+            const centerX = (L.x + R.x) / 2; const centerY = (L.y + R.y) / 2;
+            const w = 35 * p1.scale; const h = 20 * p1.scale;
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, w, h, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#009f5d'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = '#009f5d';
+            ctx.font = `${24 * p1.scale}px Arial bold`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('+', centerX - 13 * p1.scale, centerY);
+            ctx.fillText('-', centerX + 13 * p1.scale, centerY);
+            ctx.restore();
+
+            const pStart = project3D(eX1+12, eY1+10, cz);
+            const pEnd = project3D(eX2+12, eY2+10, cz);
+            const angle = Math.atan2(pEnd.y - pStart.y, pEnd.x - pStart.x);
+            const arrSize = 20 * pEnd.scale;
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(pEnd.x, pEnd.y);
+            ctx.lineTo(pEnd.x - arrSize * Math.cos(angle - Math.PI/6), pEnd.y - arrSize * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(pEnd.x - arrSize * Math.cos(angle + Math.PI/6), pEnd.y - arrSize * Math.sin(angle + Math.PI/6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawElectron(x,y,z){
+            const p=project3D(x,y,z);
+            const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,12*p.scale);
+            g.addColorStop(0,'rgba(255,0,0,1)');
+            g.addColorStop(0.5,'rgba(255,100,0,0.5)');
+            g.addColorStop(1,'rgba(255,0,0,0)');
+            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,12*p.scale,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(p.x,p.y,4*p.scale,0,Math.PI*2); ctx.fill();
+        }
+
+        const paths = [
+            [{x: -190, y: 120, z:0}, {x: -295, y: 120, z:0}, {x: -295, y: 0, z:0},{x: -40, y: 0, z:0}, {x: 23, y: 60, z:0}, {x: 23, y: 180, z:0}, {x: -190, y: 180, z:0}],
+            [{x: 110, y: 50, z:0},{x: 110, y: -100, z:0},{x: 10, y: -100, z:0},{x: 10, y: -50, z:0},{x: -23, y: -15, z:0},{x: -23, y: 15, z:0},{x: 25, y: 70, z:0},{x: 25, y: 180, z:0},{x: 190, y: 180, z:0},{x: 190, y: 50, z:0}]
+        ];
+
+        function precomputePathLengths() {
+            pathDistances = []; totalDistances = [];
+            paths.forEach((path, idx) => {
+                const dists = [0]; let total = 0;
+                for (let i = 1; i < path.length; i++) {
+                    const dx = path[i].x - path[i-1].x;
+                    const dy = path[i].y - path[i-1].y;
+                    const d = Math.hypot(dx, dy);
+                    total += d; dists.push(total);
+                }
+                pathDistances[idx] = dists; totalDistances[idx] = total;
+            });
+        }
+
+        function getPathPoint(pathIdx, prog) {
+            const p = paths[pathIdx];
+            const dists = pathDistances[pathIdx];
+            const total = totalDistances[pathIdx];
+            const target = prog * total;
+            let seg = 0;
+            while (seg < dists.length - 1 && dists[seg+1] < target) seg++;
+            const frac = (target - dists[seg]) / (dists[seg+1] - dists[seg]);
+            const A = p[seg], B = p[seg+1];
+            return {x: A.x + (B.x - A.x)*frac, y: A.y + (B.y - A.y)*frac, z: A.z + (B.z - A.z)*frac};
+        }
+
+        function initElectrons() {
+            precomputePathLengths(); electrons.length = 0;
+            const count0 = 40; for (let i = 0; i < count0; i++) electrons.push({path: 0, progress: i / count0, speed: 0.002});
+            const count1 = 80; for (let i = 0; i < count1; i++) electrons.push({path: 1, progress: i / count1, speed: 0.003});
+        }
+
+        ebSlider.addEventListener('input', () => {
+            ebValue = parseFloat(ebSlider.value);
+        });
+
+        function toggleDisplay() {
+            showCarrier = !showCarrier;
+            toggleBtn.textContent = showCarrier ? '⚡ 显示电流' : '⚡ 显示载流子';
+            ebSliderContainer.style.display = showCarrier ? 'none' : 'flex';
+        }
+
+        function animate(){
+            if(!isPlaying) return;
+            ctx.clearRect(0,0,width,height);
+            drawResistor3D(-175, 0, 0);
+            drawTransistor3D(0,0,0);
+            updateLatexTags();
+            if(showCarrier){
+                electrons.forEach(e=>{
+                    const pos = getPathPoint(e.path, e.progress);
+                    drawElectron(pos.x, pos.y, pos.z);
+                    e.progress += e.speed;
+                    if(e.progress >= 1) e.progress = 0;
+                });
+            }
+            time++;
+            animationId=requestAnimationFrame(animate);
+        }
+
+        function toggleAnimation(){isPlaying=!isPlaying;if(isPlaying)animate();}
+        function resetView(){rotationX=0;rotationY=0;resize();}
+
+        let isDragging=false,lastX,lastY;
+        canvas.addEventListener('mousedown',e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY;});
+        canvas.addEventListener('mousemove',e=>{
+            if(isDragging){
+                let dx=e.clientX-lastX;let dy=e.clientY-lastY;
+                rotationY+=dx*0.01;rotationX+=dy*0.01;
+                lastX=e.clientX;lastY=e.clientY;
+            }
+        });
+        canvas.addEventListener('mouseup',()=>isDragging=false);
+        canvas.addEventListener('mouseleave',()=>isDragging=false);
+        canvas.addEventListener('wheel',e=>{
+            e.preventDefault();
+            scale *= e.deltaY>0?0.9:1.1;
+            scale=Math.max(0.3,Math.min(1.5,scale));
+        });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            lastX = touch.clientX; lastY = touch.clientY;
+        });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - lastX; const dy = touch.clientY - lastY;
+            rotationY += dx * 0.01; rotationX += dy * 0.01;
+            lastX = touch.clientX; lastY = touch.clientY;
+        });
+        canvas.addEventListener('touchend', () => isDragging = false);
+        canvas.addEventListener('touchcancel', () => isDragging = false);
+
+        initElectrons();
+        animate();
+    </script>
+</body>
+</html>
