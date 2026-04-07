@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>BJT 饱和工作状态</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+    width:100%;
+    overflow-x:hidden;
+    background:#fff;
+    font-family:"Microsoft YaHei",sans-serif;
+    padding:8px;
+}
+.container{
+    width:100% !important;
+    max-width:100% !important;
+    margin:0;
+}
+.principle{
+    margin-bottom:10px;
+    line-height:1.7;
+    font-size:16px;
+}
+.principle h2{
+    margin-bottom:10px;
+    font-size:20px;
+    text-align:center;
+    font-weight:bold;
+}
+.principle p{
+    margin-bottom:8px;
+    text-indent:2em;
+    word-break:break-all;
+    overflow-wrap:break-word;
+    hanging-punctuation:first last;
+}
+
+/* 🔥 修正：图片浮动 + 顶端对齐 + 文字环绕 */
+.float-right-img {
+    float: right;
+    width: 40%;        /* 图片宽度占比 */
+    height: auto;      /* 高度自适应 */
+    margin-left: 15px; /* 文字与图片间距 */
+    margin-bottom: 8px;
+    border: none;
+    background: none;
+    padding: 0;
+}
+/* 图片内部自适应 */
+.float-right-img img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.clearfix::after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+.chart-wrapper{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
+    gap:10px;
+    width:100%;
+    height:190px;
+    margin:60px 0 15px 0;
+    position:relative;
+    align-items:stretch;
+}
+.canvas-box{
+    position:relative;
+    flex:1;
+    height:100%;
+    min-width:0;
+}
+canvas{
+    width:100%;
+    height:100%;
+    display:block;
+}
+
+.label{position:absolute;font-size:15px;color:#000}
+.label-x{bottom:8px;left:90%;transform:translateX(-50%)}
+.label-y{top:15%;left:5px;transform:translateY(-50%)}
+.origin{position:absolute;font-size:15px}
+
+.radio-group{
+    position:absolute;
+    top:-55px;
+    left:0;
+    display:flex;
+    gap:18px;
+    align-items:center;
+    font-size:15px;
+}
+.slider-box{
+    position:absolute;
+    top:-30px;
+    left:0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:280px;
+    min-width:220px;
+}
+#ibSlider{
+    flex:1;
+    min-width:150px;
+    height:20px;
+}
+
+#redDot,#redDot2{
+    position:absolute;
+    width:8px;height:8px;
+    background:red;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    display:none;
+    z-index:10;
+}
+#greenDot,#greenDot2{
+    position:absolute;
+    width:8px;height:8px;
+    background:limegreen;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    display:none;
+    z-index:10;
+}
+#linkLine{
+    position:absolute;
+    height:1px;
+    border-top:2px dashed #333;
+    z-index:5;
+    pointer-events:none;
+    display:none;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="principle clearfix">
+    <h2>BJT 饱和工作状态原理</h2>
+
+    <!-- 🔥 直接显示你的 CEcircuit.png 图片 -->
+    <img src="images/CEcircuit.png" class="float-right-img" alt="共射放大电路">
+
+    <p>在饱和区，发射结正偏，即\(U_\mathrm{BE}>U_\mathrm{ON}\)。共射组态情况下\(U_\mathrm{CE}< U_\mathrm{BE}\)，集电结处于正偏，\(I_\mathrm{C}\)随\(U_\mathrm{CE}\)的增大而增大，而\(I_\mathrm{B}\)对\(I_\mathrm{C}\)的影响不明显，并最终达到集电极饱和电流\(I_\mathrm{CS}\)。</p>
+    <p>对于小功率BJT管，当\(U_\mathrm{CE}=U_\mathrm{BE}\)，即\(U_\mathrm{CB}=0\)时，BJT处于临界饱和状态。临界饱和时，硅管\(U_\mathrm{CES}≈0.3\,\mathrm{V}\)，锗管\(U_\mathrm{CES}< 0.3\,\mathrm{V}\)。</p>
+    <p>\(R_\mathrm{C}\)较大时，BJT管更容易落入饱和区。</p>
+  </div>
+
+  <div class="chart-wrapper">
+    <div id="linkLine"></div>
+    <div class="canvas-box">
+      <canvas id="c1"></canvas>
+      <div id="redDot"></div>
+      <div id="greenDot"></div>
+      <div class="label label-x">\(U_{\mathrm{CE}}\)</div>
+      <div class="label label-y">\(I_{\mathrm{C}}\)</div>
+      <div class="origin" style="bottom:12px;left:15px;">O</div>
+      <div class="label" style="position:absolute;right:12px;top:50px;font-size:15px;">\(I_\mathrm{B}\)</div>
+    </div>
+    <div class="canvas-box">
+      <canvas id="c2"></canvas>
+      <div id="redDot2"></div>
+      <div id="greenDot2"></div>
+      <div class="label label-x">\(I_{\mathrm{B}}\)</div>
+      <div class="label label-y">\(I_{\mathrm{C}}\)</div>
+      <div class="origin" style="bottom:12px;left:15px;">O</div>
+    </div>
+
+    <div class="radio-group">
+      <label><input type="radio" name="rcType" value="small" checked> \(R_\mathrm{C}\)较小</label>
+      <label><input type="radio" name="rcType" value="large"> \(R_\mathrm{C}\)较大</label>
+    </div>
+    <div class="slider-box">
+      <label>\(I_\mathrm{B}\)</label>
+      <input type="range" id="ibSlider" min="0" max="100" value="10">
+    </div>
+  </div>
+</div>
+
+<script>
+let ibRatio = 0.1;
+let isRcLarge = false;
+
+const I_MAX = 4.0;
+const PAD = 30;
+
+function drawArrow(ctx,x1,y1,x2,y2,size=6){
+    const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+    const ux=dx/len, uy=dy/len;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const px=x2-ux*size, py=y2-uy*size;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(px-uy*size/2, py+ux*size/2);
+    ctx.lineTo(px+uy*size/2, py-ux*size/2);
+    ctx.closePath(); ctx.fill();
+}
+
+function getIc(ib, scale){
+    const maxIc = 0.7 * I_MAX;
+    return maxIc * scale * (1 - Math.exp(-ib * 8.5));
+}
+
+// 已知 IC，反查 IB
+function getIbFromIc(icTarget, scale){
+    const maxIc = 0.7 * I_MAX * scale;
+    if(icTarget >= maxIc) return 0.8;
+    return -Math.log(1 - icTarget / maxIc) / 8.5;
+}
+
+function resizeAndDraw(){ drawAll(); updateDots(); }
+
+function drawAll(){
+    const c1=document.getElementById('c1'), c2=document.getElementById('c2');
+    function resize(canvas){
+        const dpr=window.devicePixelRatio||1;
+        const r=canvas.getBoundingClientRect();
+        canvas.width=r.width*dpr; canvas.height=r.height*dpr;
+        const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+        return ctx;
+    }
+    const ctx1=resize(c1), ctx2=resize(c2);
+    ctx1.clearRect(0,0,c1.width,c1.height);
+    ctx2.clearRect(0,0,c2.width,c2.height);
+
+    const W1=c1.width/devicePixelRatio, H1=c1.height/devicePixelRatio;
+    const W2=c2.width/devicePixelRatio, H2=c2.height/devicePixelRatio;
+    const beta=80;
+    const scale = isRcLarge ? 0.55 : 1.0;
+
+    // 左坐标轴
+    ctx1.lineWidth=1.5; ctx1.strokeStyle='#000';
+    drawArrow(ctx1,PAD,H1-PAD,W1-PAD,H1-PAD);
+    drawArrow(ctx1,PAD,H1-PAD,PAD,PAD);
+
+    // 输出曲线
+    ctx1.lineWidth=1.8; ctx1.strokeStyle='#000';
+    [10,20,30,40].forEach(ib=>{
+        ctx1.beginPath();
+        for(let u=0;u<=10;u+=0.1){
+            const ic=(ib*beta/1200)*(1-Math.exp(-u*2.5));
+            const x=PAD+(u/10)*(W1-PAD*2);
+            const y=H1-PAD-(ic/I_MAX)*(H1-PAD*2);
+            u===0?ctx1.moveTo(x,y):ctx1.lineTo(x,y);
+        }
+        ctx1.stroke();
+    });
+
+    // 负载线
+    ctx1.lineWidth=2.5;
+    const y0 = H1-PAD - 0.7*scale*(H1-PAD*2);
+    ctx1.strokeStyle = isRcLarge ? 'limegreen' : '#f00';
+    ctx1.beginPath();
+    ctx1.moveTo(PAD, y0);
+    ctx1.lineTo(W1-PAD-20, H1-PAD);
+    ctx1.stroke();
+
+    // 右坐标轴
+    ctx2.lineWidth=1.5; ctx2.strokeStyle='#000';
+    drawArrow(ctx2,PAD,H2-PAD,W2-PAD,H2-PAD);
+    drawArrow(ctx2,PAD,H2-PAD,PAD,PAD);
+
+    // 传输曲线
+    ctx2.lineWidth=2.5;
+    ctx2.strokeStyle = isRcLarge ? 'limegreen' : '#f00';
+    ctx2.beginPath();
+    for(let ib=0;ib<=0.8;ib+=0.02){
+        const ic=getIc(ib,scale);
+        const x=PAD+ib*(W2-PAD*2);
+        const y=H2-PAD-(ic/I_MAX)*(H2-PAD*2);
+        ib===0?ctx2.moveTo(x,y):ctx2.lineTo(x,y);
+    }
+    ctx2.stroke();
+}
+
+function updateDots(){
+    const c1=document.getElementById('c1'), c2=document.getElementById('c2');
+    const W1=c1.offsetWidth,  H1=c1.offsetHeight;
+    const W2=c2.offsetWidth,  H2=c2.offsetHeight;
+
+    const scale = isRcLarge ? 0.55 : 1.0;
+    const t = 1 - ibRatio;
+
+    // 左侧圆点：完全保持在负载线上
+    const y0 = H1-PAD - 0.7*scale*(H1-PAD*2);
+    const px = PAD + (W1-PAD*2-20)*t;
+    const py = y0 + (H1-PAD - y0)*t;
+
+    // 从左侧 py 算出对应的 IC 值
+    const ic = ( (H1-PAD) - py ) / (H1-PAD*2) * I_MAX;
+
+    // 右侧圆点：用 IC 反查 IB，保证在曲线上，且 Y 和左边一致
+    const ibFound = getIbFromIc(ic, scale);
+    const x2 = PAD + ibFound * (W2-PAD*2);
+    const y2 = H2-PAD - (ic / I_MAX) * (H2-PAD*2); // 高度严格同左边
+
+
+    const redDot=document.getElementById('redDot');
+    const greenDot=document.getElementById('greenDot');
+    const redDot2=document.getElementById('redDot2');
+    const greenDot2=document.getElementById('greenDot2');
+    const line=document.getElementById('linkLine');
+
+    redDot.style.display='none'; greenDot.style.display='none';
+    redDot2.style.display='none'; greenDot2.style.display='none';
+
+    if(!isRcLarge){
+        redDot.style.left=px+'px'; redDot.style.top=py+'px'; redDot.style.display='block';
+        redDot2.style.left=x2+'px'; redDot2.style.top=y2+'px'; redDot2.style.display='block';
+    }else{
+        greenDot.style.left=px+'px'; greenDot.style.top=py+'px'; greenDot.style.display='block';
+        greenDot2.style.left=x2+'px'; greenDot2.style.top=y2+'px'; greenDot2.style.display='block';
+    }
+
+    // 水平连线
+    const wrap=document.querySelector('.chart-wrapper');
+    const wrapRect=wrap.getBoundingClientRect();
+    const d1=isRcLarge?greenDot:redDot;
+    const d2=isRcLarge?greenDot2:redDot2;
+    const r1=d1.getBoundingClientRect(), r2=d2.getBoundingClientRect();
+    line.style.left=(r1.left-wrapRect.left)+'px';
+    line.style.top=(r1.top-wrapRect.top+3)+'px';
+    line.style.width=(r2.left-r1.left)+'px';
+    line.style.display='block';
+}
+
+window.addEventListener('load',()=>{
+    drawAll(); updateDots();
+    document.getElementById('ibSlider').addEventListener('input',e=>{
+        ibRatio=e.target.value/100; updateDots();
+    });
+    document.querySelectorAll('input[name="rcType"]').forEach(r=>{
+        r.addEventListener('change',e=>{
+            isRcLarge = e.target.value==='large';
+            drawAll(); updateDots();
+        });
+    });
+});
+
+window.addEventListener('resize',resizeAndDraw);
+</script>
+</body>
+</html>
