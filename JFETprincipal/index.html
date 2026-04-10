@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N沟道结型场效应管（JFET）工作原理</title>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$','$']] }, svg: { fontCache: 'global' } };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft YaHei',sans-serif}
+        body{background:transparent;color:#333;padding:10px;}
+        .container{width:100%;max-width:100%;margin:0;padding:10px;}
+        h1{text-align:center;margin-bottom:15px;color:#0277bd;font-size:16px;line-height:1.4}
+        .section{margin-bottom:15px;width:100%;position:relative;}
+        h2{color:#000;margin-bottom:8px;font-size:16px;line-height:1.4}
+        p{line-height:1.6;margin-bottom:8px;font-size:15px}
+        p.indent {text-indent: 2em;}
+        
+        .jfet-diagram {
+            width: 50%;max-width:250px;height:auto;margin:15px auto;display:block;background:transparent;overflow:visible !important;
+        }
+        
+        .characteristic-curve{width:100%;height:280px;border:1px solid #ccc;position:relative;margin:10px 0}
+        .curve-axis{position:absolute;background:#333}
+        .x-axis{width:100%;height:2px;bottom:40px}
+        .y-axis{width:100%;height:100%;left:40px}
+        .label{position:absolute;font-weight:bold;font-size:14px}
+        
+        .slider-container { margin:20px auto;width:80%;text-align:center; }
+        .slider-wrapper { position:relative;width:60%;margin:0 auto; }
+        .slider-mark { position:absolute;top:0px;font-size:16px;font-weight:bold; }
+        .slider-mark.left { left:-55px; }
+        .slider-mark.leftDS { left:-75px; }
+        .slider-mark.right { right:-30px; }
+        .slider-mark.rightDS { right:-40px; }
+        .slider-container input { width:100%;vertical-align:middle; }
+        .slider-container span { font-size:16px;font-weight:bold;color:#0277bd;margin-left:10px; }
+
+        .toggle-btn {
+            margin-left:10px;padding:3px 8px;cursor:pointer;background:#007bff;color:white;border:none;border-radius:4px;font-size:14px;
+        }
+        .toggle-btn.off { background:#6c757d; }
+        .hidden { display:none !important; }
+
+        .curve-box {
+            width: 300px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .curve-box canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .curve-label { position: absolute; font-size: 15px; color: #000; }
+        .curve-label-title { bottom: 170px; left: 35%; font-size: 15px; color: #000; }
+        .curve-label-R { bottom: 130px; left: 11%; font-size: 15px; color: #00f; }
+        .curve-label-I { bottom: 130px; left: 50%; font-size: 15px; color: #00f; }
+        .curve-label-x { bottom: 8px; left: 90%; transform: translateX(-50%); }
+        .curve-label-y { top: 15%; left: 5px; transform: translateY(-50%); }
+        .curve-label-ugs { bottom: 89px; left: 97%; transform: translateX(-50%); }
+        .curve-origin { position: absolute; font-size: 15px; bottom: 12px; left: 15px; }
+
+        #curveSection p {
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>N沟道结型场效应管（JFET）工作原理</h1>
+    <div class="section">
+        <p class="indent">N沟道JFET正常工作时，栅源需加<strong>反偏电压</strong>，确保栅极电流为0，输入电阻超过$10^7 \Omega$。</p>
+        <p>
+            <strong>（1）$U_\mathrm{GS}$对导电沟道的控制：</strong>当$U_\mathrm{DS}=0\mathrm{V}$时，$U_\mathrm{GS}$直接决定沟道宽度。
+            <button class="toggle-btn" id="gsToggle">关闭演示</button>
+        </p>
+        <p>
+            <strong>（2）$U_\mathrm{DS}$对导电沟道的控制：</strong>当$U_\mathrm{GS,off}< U_\mathrm{GS}< 0$时，$U_\mathrm{DS}$影响沟道分布。
+            <button class="toggle-btn" id="dsToggle">开启演示</button>
+        </p>
+    </div>
+
+    <div class="slider-container" id="gsModule">
+        <span id="ugsValue">存在沟道</span>
+        <div class="slider-wrapper">
+            <div class="slider-mark left">$U_\mathrm{GS,off}$</div>
+            <div class="slider-mark right">$0 \mathrm{V}$</div>
+            <input type="range" id="ugsSlider" min="-5" max="0" step="0.1" value="-2.5">
+        </div>
+    </div>
+
+    <div class="section" id="circuitSection">
+        <svg class="jfet-diagram" viewBox="-50 -50 500 650" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                    <polygon points="0 0,8 3.5,0 7" fill="#000"/>
+                </marker>
+            </defs>
+            <rect x="50" y="50" width="300" height="350" fill="transparent" stroke="#000" stroke-width="3"/>
+            <rect x="140" y="20" width="120" height="30" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="100" y="40" font-size="40" fill="#000" font-weight="bold">D</text>
+            <line x1="200" y1="20" x2="200" y2="0" stroke="#000" stroke-width="3"/>
+            <rect x="140" y="400" width="120" height="30" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="110" y="440" font-size="40" fill="#000" font-weight="bold">S</text>
+            <line x1="200" y1="420" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <rect x="20" y="170" width="30" height="120" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="-20" y="210" font-size="40" fill="#000" font-weight="bold">G</text>
+            <line x1="20" y1="230" x2="-100" y2="230" stroke="#000" stroke-width="3"/>
+            <circle cx="-20" cy="230" r="8" fill="#000"/>
+            <rect x="350" y="170" width="30" height="120" fill="#000" stroke="#000" stroke-width="2"/>
+            <line x1="380" y1="230" x2="420" y2="230" stroke="#000" stroke-width="3"/>
+            
+            <rect id="leftShadow" x="50" y="105" width="90" height="250" fill="rgba(0,0,0,0.3)" stroke="none"/>
+            <rect id="rightShadow" x="260" y="105" width="90" height="250" fill="rgba(0,0,0,0.3)" stroke="none"/>
+            
+            <rect x="50" y="155" width="50" height="150" fill="white" stroke="#000" stroke-width="2"/>
+            <rect x="300" y="155" width="50" height="150" fill="white" stroke="#000" stroke-width="2"/>
+            <text x="75" y="250" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+            <text x="325" y="250" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+            <text x="200" y="95" font-size="36" fill="#000" text-anchor="middle">N沟道</text>
+            
+            <line x1="200" y1="0" x2="460" y2="0" stroke="#000" stroke-width="3"/>
+            <line x1="460" y1="0" x2="460" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="460" y1="500" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="420" y1="230" x2="420" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-20" y1="230" x2="-20" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-20" y1="460" x2="420" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="500" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="500" x2="-100" y2="380" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="360" x2="-100" y2="230" stroke="#000" stroke-width="3"/>
+            <line x1="-130" y1="400" x2="-75" y2="345" stroke="#000" stroke-width="3" marker-end="url(#arrow)"/>
+            <line x1="-120" y1="360" x2="-80" y2="360" stroke="#000" stroke-width="3"/>
+            <line x1="-135" y1="380" x2="-65" y2="380" stroke="#000" stroke-width="4"/>
+            <circle cx="200" cy="500" r="8" fill="#000"/>
+            <line x1="200" y1="500" x2="200" y2="540" stroke="#000" stroke-width="3"/>
+            <line x1="150" y1="540" x2="250" y2="540" stroke="#000" stroke-width="3"/>
+        </svg>
+    </div>
+
+    <div class="slider-container hidden" id="dsModule">
+        <span id="udsStatus">出现预夹断</span>
+        <div class="slider-wrapper">
+            <div class="slider-mark leftDS"> $U_\mathrm{DS}$：$0 \mathrm{V}$</div>
+            <div class="slider-mark rightDS">大</div>
+            <input type="range" id="udsSlider" min="0" max="5" step="0.1" value="2.5">
+        </div>
+    </div>
+
+    <div class="section hidden" id="dsCircuitSection" style="position:relative;">
+        <div style="position:absolute; left:6%; top:58%; font-size:16px; font-weight:bold; pointer-events:none;">
+            $U_\mathrm{GS}$<br>固定
+        </div>
+        <div style="position:absolute; left:83%; top:40%; font-size:16px; font-weight:bold; pointer-events:none;">
+            $U_\mathrm{DS}$<br>可变
+        </div>
+
+        <svg class="jfet-diagram" viewBox="-50 -50 500 650" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="dsArrow" markerWidth="10" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                    <polygon points="0 0,8 3.5,0 7" fill="#000"/>
+                </marker>
+                <mask id="shadowMask">
+                    <rect x="0" y="0" width="500" height="650" fill="black"/>
+                    <polygon id="maskLeft" fill="white"/>
+                    <polygon id="maskRight" fill="white"/>
+                </mask>
+            </defs>
+            <rect x="50" y="50" width="300" height="350" fill="transparent" stroke="#000" stroke-width="3"/>
+            <rect x="140" y="20" width="120" height="30" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="100" y="40" font-size="40" fill="#000" font-weight="bold">D</text>
+            <line x1="200" y1="20" x2="200" y2="0" stroke="#000" stroke-width="3"/>
+            <rect x="140" y="400" width="120" height="30" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="110" y="440" font-size="40" fill="#000" font-weight="bold">S</text>
+            <line x1="200" y1="420" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <rect x="20" y="170" width="30" height="120" fill="#000" stroke="#000" stroke-width="2"/>
+            <text x="-20" y="210" font-size="40" fill="#000" font-weight="bold">G</text>
+            <line x1="20" y1="230" x2="-100" y2="230" stroke="#000" stroke-width="3"/>
+            <circle cx="-20" cy="230" r="8" fill="#000"/>
+            <rect x="350" y="170" width="30" height="120" fill="#000" stroke="#000" stroke-width="2"/>
+            <line x1="380" y1="230" x2="420" y2="230" stroke="#000" stroke-width="3"/>
+            
+            <rect x="50" y="105" width="300" height="250" fill="#000" opacity="0.3" mask="url(#shadowMask)"/>
+            <polygon id="borderLeft" stroke="none" stroke-width="2" fill="none"/>
+            <polygon id="borderRight" stroke="none" stroke-width="2" fill="none"/>
+            
+            <rect x="50" y="155" width="50" height="150" fill="white" stroke="#000" stroke-width="2"/>
+            <rect x="300" y="155" width="50" height="150" fill="white" stroke="#000" stroke-width="2"/>
+            <text x="75" y="250" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+            <text x="325" y="250" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+            <text x="200" y="95" font-size="36" fill="#000" text-anchor="middle">N沟道</text>
+            
+            <line x1="200" y1="0" x2="480" y2="0" stroke="#000" stroke-width="3"/>
+            <line x1="480" y1="0" x2="480" y2="240" stroke="#000" stroke-width="3"/>
+            <line x1="480" y1="260" x2="480" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="480" y1="500" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="420" y1="230" x2="420" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-20" y1="230" x2="-20" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-20" y1="460" x2="420" y2="460" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="500" x2="200" y2="500" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="500" x2="-100" y2="380" stroke="#000" stroke-width="3"/>
+            <line x1="-100" y1="360" x2="-100" y2="230" stroke="#000" stroke-width="3"/>
+            <line x1="-120" y1="360" x2="-80" y2="360" stroke="#000" stroke-width="3"/>
+            <line x1="-135" y1="380" x2="-65" y2="380" stroke="#000" stroke-width="4"/>
+            <circle cx="200" cy="500" r="8" fill="#000"/>
+            <line x1="200" y1="500" x2="200" y2="540" stroke="#000" stroke-width="3"/>
+            <line x1="150" y1="540" x2="250" y2="540" stroke="#000" stroke-width="3"/>
+            <line x1="460" y1="280" x2="505" y2="225" stroke="#000" stroke-width="3" marker-end="url(#dsArrow)"/>
+            <line x1="460" y1="260" x2="500" y2="260" stroke="#000" stroke-width="4"/>
+            <line x1="445" y1="240" x2="515" y2="240" stroke="#000" stroke-width="3"/>
+        </svg>
+    </div>
+
+    <div class="section hidden" id="curveSection">
+        <div class="curve-box">
+            <canvas id="curveCanvas"></canvas>
+            <div class="curve-label curve-label-title">输出特性曲线</div>
+            <div class="curve-label curve-label-R">可变电阻区</div>
+            <div class="curve-label curve-label-I">恒流区</div>
+            <div class="curve-label curve-label-x">$u_\mathrm{DS}$</div>
+            <div class="curve-label curve-label-y">$i_\mathrm{D}$</div>
+            <div class="curve-label curve-label-ugs">$U_\mathrm{GS}$</div>
+            <div class="curve-origin">O</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ugsSlider = document.getElementById('ugsSlider');
+    const ugsValue = document.getElementById('ugsValue');
+    const leftShadow = document.getElementById('leftShadow');
+    const rightShadow = document.getElementById('rightShadow');
+    const gsToggle = document.getElementById('gsToggle');
+    const gsModule = document.getElementById('gsModule');
+    const circuitSection = document.getElementById('circuitSection');
+
+    const dsToggle = document.getElementById('dsToggle');
+    const dsModule = document.getElementById('dsModule');
+    const dsCircuitSection = document.getElementById('dsCircuitSection');
+    const udsSlider = document.getElementById('udsSlider');
+    const udsStatus = document.getElementById('udsStatus');
+    const maskLeft = document.getElementById('maskLeft');
+    const maskRight = document.getElementById('maskRight');
+    const borderLeft = document.getElementById('borderLeft');
+    const borderRight = document.getElementById('borderRight');
+    const curveSection = document.getElementById('curveSection');
+
+    const leftX = 50;
+    const leftW = 90;
+    const rightX = 260;
+    const rightW = 90;
+    const maxExpand = 60;
+    let lastUgsValue = -2.5;
+
+    function closeDSDemo() {
+        dsToggle.textContent = '开启演示';
+        dsToggle.classList.remove('off');
+        dsModule.classList.add('hidden');
+        dsCircuitSection.classList.add('hidden');
+        curveSection.classList.add('hidden');
+        udsSlider.removeEventListener('input', updateDSChannel);
+        udsSlider.removeEventListener('input', redrawCurveWithDot);
+    }
+
+    function closeGSDemo() {
+        gsToggle.textContent = '开启演示';
+        gsToggle.classList.remove('off');
+        gsModule.classList.add('hidden');
+        circuitSection.classList.add('hidden');
+        ugsSlider.removeEventListener('input', updateShadows);
+    }
+
+    function updateShadows() {
+        const ugs = parseFloat(ugsSlider.value);
+        const ratio = (0 - ugs)/5;
+        leftShadow.setAttribute('width', leftW + maxExpand*ratio);
+        const currentExpand = maxExpand*ratio;
+        rightShadow.setAttribute('x', rightX - currentExpand);
+        rightShadow.setAttribute('width', rightW + currentExpand);
+
+        if (ugs === 0) {
+            ugsValue.textContent = "沟道最宽";
+        } else if (ugs === -5) {
+            ugsValue.textContent = "沟道消失";
+        } else if (ugs < lastUgsValue) {
+            ugsValue.textContent = "←沟道变窄";
+        } else if (ugs > lastUgsValue) {
+            ugsValue.textContent = "沟道变宽→";
+        }
+        lastUgsValue = ugs;
+    }
+
+    gsToggle.addEventListener('click', function() {
+        if (!this.classList.contains('off')) {
+            closeDSDemo();
+            this.textContent = '关闭演示';
+            this.classList.add('off');
+            gsModule.classList.remove('hidden');
+            circuitSection.classList.remove('hidden');
+            ugsSlider.addEventListener('input', updateShadows);
+            updateShadows();
+        } else {
+            this.textContent = '开启演示';
+            this.classList.remove('off');
+            gsModule.classList.add('hidden');
+            circuitSection.classList.add('hidden');
+            ugsSlider.removeEventListener('input', updateShadows);
+        }
+    });
+
+    const yTop = 105;
+    const yBot = 355;
+    const xLeftOuter = 50;
+    const xRightOuter = 350;
+    const baseGap = 120;
+
+    function updateDSChannel() {
+        const uds = parseFloat(udsSlider.value);
+        if(uds === 2.5){
+            udsStatus.textContent = "出现预夹断";
+            udsStatus.style.color = "red";
+        }else if(uds > 2.5){
+            udsStatus.textContent = "夹断区向源极延伸";
+            udsStatus.style.color = "#0277bd";
+        }else{
+            udsStatus.textContent = "未出现夹断，处于可变电阻区";
+            udsStatus.style.color = "#0277bd";
+        }
+        
+        const shrink = uds * 12;
+        const x1Top = xLeftOuter + baseGap + shrink;
+        const x1Bot = xLeftOuter + baseGap;
+        const leftPoints = `${xLeftOuter},${yTop} ${x1Top},${yTop} ${x1Bot},${yBot} ${xLeftOuter},${yBot}`;
+        maskLeft.setAttribute('points', leftPoints);
+        borderLeft.setAttribute('points', leftPoints);
+
+        const x2Top = xRightOuter - baseGap - shrink;
+        const x2Bot = xRightOuter - baseGap;
+        const rightPoints = `${x2Top},${yTop} ${xRightOuter},${yTop} ${xRightOuter},${yBot} ${x2Bot},${yBot}`;
+        maskRight.setAttribute('points', rightPoints);
+        borderRight.setAttribute('points', rightPoints);
+    }
+
+    dsToggle.addEventListener('click', function() {
+        if (!this.classList.contains('off')) {
+            closeGSDemo();
+            this.textContent = '关闭演示';
+            this.classList.add('off');
+            dsModule.classList.remove('hidden');
+            curveSection.classList.remove('hidden');
+            dsCircuitSection.classList.remove('hidden');
+            udsSlider.addEventListener('input', updateDSChannel);
+            udsSlider.addEventListener('input', redrawCurveWithDot);
+            updateDSChannel();
+            redrawCurveWithDot();
+        } else {
+            this.textContent = '开启演示';
+            this.classList.remove('off');
+            dsModule.classList.add('hidden');
+            dsCircuitSection.classList.add('hidden');
+            curveSection.classList.add('hidden');
+            udsSlider.removeEventListener('input', updateDSChannel);
+            udsSlider.removeEventListener('input', redrawCurveWithDot);
+        }
+    });
+
+    gsToggle.classList.add('off');
+    ugsSlider.addEventListener('input', updateShadows);
+    udsStatus.style.color = "red";
+    updateShadows();
+    updateDSChannel();
+
+    const I_MAX = 4.0;
+    const PAD = 30;
+    function drawArrow(ctx, x1, y1, x2, y2, size=6) {
+        const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+        const ux=dx/len, uy=dy/len;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        const px=x2-ux*size, py=y2-uy*size;
+        ctx.beginPath();
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(px-uy*size/2, py+ux*size/2);
+        ctx.lineTo(px+uy*size/2, py-ux*size/2);
+        ctx.closePath(); ctx.fill();
+    }
+
+    function redrawCurveWithDot() {
+        const canvas = document.getElementById('curveCanvas');
+        const dpr = window.devicePixelRatio || 1;
+        const r = canvas.getBoundingClientRect();
+        canvas.width = r.width * dpr;
+        canvas.height = r.height * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        const W = canvas.width / dpr;
+        const H = canvas.height / dpr;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        ctx.lineWidth=1.5; ctx.strokeStyle='#000';
+        drawArrow(ctx,PAD,H-PAD,W-PAD,H-PAD);
+        drawArrow(ctx,PAD,H-PAD,PAD,PAD);
+
+        ctx.lineWidth=1.8; ctx.strokeStyle='#000';
+        const beta=80;
+        const curves = [];
+        const ibList = [10,20,30,40];
+
+        ibList.forEach((ib, idx)=>{
+            let points = [];
+            ctx.beginPath();
+            for(let u=0;u<=10;u+=0.1){
+                const ic=(ib*beta/1200)*(1-Math.exp(-u*1));
+                const x=PAD+(u/10)*(W-PAD*2);
+                const y=H-PAD-(ic/I_MAX)*(H-PAD*2);
+                points.push({x,y,u,ic});
+                u===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+            }
+            ctx.stroke();
+            curves.push(points);
+        });
+
+        // ===================== 平滑蓝色二次抛物线虚线 =====================
+        ctx.beginPath();
+        ctx.setLineDash([5, 3]);
+        ctx.strokeStyle = '#0066ff';
+        ctx.lineWidth = 2;
+        
+        // 二次函数平滑曲线：y = a * x²
+        ctx.moveTo(PAD, H-PAD);
+        for (let u = 0; u <= 3.8; u += 0.2) {
+            // 二次抛物线，完美平滑
+            const yVal = 0.074 * u * u;
+            const x = PAD + (u / 10) * (W - PAD * 2);
+            const y = H - PAD - yVal * (H - PAD * 2);
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 红点（第二条曲线）
+        const targetCurve = curves[2];
+        const udsVal = parseFloat(udsSlider.value);
+        let targetPoint = targetCurve[0];
+        for(let p of targetCurve){
+            if(p.u >= udsVal){
+                targetPoint = p;
+                break;
+            }
+        }
+
+        ctx.beginPath();
+        ctx.arc(targetPoint.x, targetPoint.y, 4, 0, Math.PI*2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
+</script>
+</body>
+</html>
