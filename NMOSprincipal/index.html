@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NMOS场效应管工作原理</title>
+    <script>
+        window.MathJax = {
+        tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+        startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft YaHei',sans-serif}
+        body{background:transparent;color:#333;padding:10px;}
+        .container{width:100%;max-width:100%;margin:0;padding:10px;}
+        h1{text-align:center;margin-bottom:15px;color:#0277bd;font-size:16px;line-height:1.4}
+        .section{margin-bottom:15px;width:100%;position:relative;}
+        h2{color:#000;margin-bottom:8px;font-size:16px;line-height:1.4}
+        p{line-height:1.6;margin-bottom:8px;font-size:15px}
+        p.indent {text-indent: 2em;}
+        
+        .jfet-diagram {
+            width: 50%;max-width:250px;height:auto;margin:15px auto;display:block;background:transparent;overflow:visible !important;
+        }
+        
+        .characteristic-curve{width:100%;height:280px;border:1px solid #ccc;position:relative;margin:10px 0}
+        .curve-axis{position:absolute;background:#333}
+        .x-axis{width:100%;height:2px;bottom:40px}
+        .y-axis{width:100%;height:100%;left:40px}
+        .label{position:absolute;font-weight:bold;font-size:14px}
+        
+        .slider-container { margin:20px auto;width:80%;text-align:center; }
+        .slider-wrapper { position:relative;width:60%;margin:0 auto; }
+        .slider-mark { position:absolute;top:0px;font-size:16px;font-weight:bold; }
+        .slider-mark.leftup { left:-10px; top:25px;}
+        .slider-mark.middle { left:65px; top:25px;}
+        .slider-mark.rightdown { right:-50px; top:25px;}
+        .slider-mark.left { left:-60px; }
+        .slider-mark.leftDS { left:-75px; }
+        .slider-mark.rightDS { right:-40px; }
+        .slider-mark.figure { left:80px; top:65px; }
+        .slider-container input { width:100%;vertical-align:middle; }
+        .slider-container span { font-size:16px;font-weight:bold;color:#0277bd;margin-left:10px; }
+
+        .toggle-btn {
+            margin-left:10px;padding:3px 8px;cursor:pointer;background:#007bff;color:white;border:none;border-radius:4px;font-size:14px;
+        }
+        .toggle-btn.off { background:#777; }
+        .hidden { display:none !important; }
+
+        .curve-box {
+            width: 300px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .curve-box canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .curve-label { position: absolute; font-size: 15px; color: #000; }
+        .curve-label-title { bottom: 170px; left: 35%; font-size: 15px; color: #000; }
+        .curve-label-R { bottom: 130px; left: 11%; font-size: 15px; color: #00f; }
+        .curve-label-I { bottom: 130px; left: 50%; font-size: 15px; color: #00f; }
+        .curve-label-x { bottom: 8px; left: 90%; transform: translateX(-50%); }
+        .curve-label-y { top: 15%; left: 5px; transform: translateY(-50%); }
+        .curve-label-ugs { bottom: 89px; left: 97%; transform: translateX(-50%); }
+        .curve-label-ugsth { bottom: 39px; left: 99%; transform: translateX(-50%); }
+        .curve-origin { position: absolute; font-size: 15px; bottom: 12px; left: 15px; }
+
+        #curveSection p {
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>NMOS场效应管工作原理</h1>
+    <div class="section">
+        <p>
+            <strong>（1）$U_\mathrm{GS}$对导电沟道的控制：</strong>当$U_\mathrm{DS}=0\mathrm{V}$时，$U_\mathrm{GS}$决定是否存在导电沟道。$U_\mathrm{GS}\geq U_\mathrm{GS,th}$，则存在导电沟道。继续增大$U_\mathrm{GS}$，导电沟道加宽。
+            <button class="toggle-btn" id="gsToggle">关闭演示</button>
+        </p>
+        <div class="slider-container" id="gsModule">
+            <span id="ugsValue">没有沟道</span>
+            <div class="slider-wrapper">
+                <div class="slider-mark left">$U_\mathrm{GS}$：</div>
+                <div class="slider-mark leftup">$0 \mathrm{V}$</div>
+                <div class="slider-mark middle">$U_\mathrm{GS,th}$</div>
+                <div class="slider-mark rightdown">$U_\mathrm{GS}$较大</div>
+                <input type="range" id="ugsSlider" min="0" max="5" step="0.1" value="0">
+            </div>
+        </div>
+        <div class="section" id="circuitSection">
+            <svg class="jfet-diagram" viewBox="-150 -200 500 650" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                        <polygon points="0 0,8 3.5,0 7" fill="#000"/>
+                    </marker>
+                    <marker id="arrowEnd" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+                        <polygon points="0 0,6 2,0 4" fill="#000"/>
+                    </marker>
+                    <pattern id="slashPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+                      <line x1="0" y1="8" x2="8" y2="0" stroke="#777" stroke-width="1.5"/>
+                    </pattern>
+                </defs>
+
+                <rect x="-50" y="130" width="510" height="240" fill="transparent" stroke="#000" stroke-width="2"/>
+                <rect x="140" y="370" width="120" height="20" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="200" y="350" font-size="36" fill="#000" text-anchor="middle">P型衬底</text>
+                <text x="210" y="430" font-size="40" fill="#000" font-weight="bold">B</text>
+                <line x1="200" y1="390" x2="200" y2="430" stroke="#000" stroke-width="3"/>
+                <line x1="-100" y1="430" x2="200" y2="430" stroke="#000" stroke-width="3"/>
+                <rect x="-50" y="70" width="510" height="60" fill="url(#slashPattern)" stroke="#777" stroke-width="2"/>
+                <rect x="115" y="50" width="180" height="20" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="155" y="40" font-size="40" fill="#000" font-weight="bold">G</text>            
+                <line x1="200" y1="50" x2="200" y2="-50" stroke="#000" stroke-width="3"/>
+                <line x1="200" y1="-50" x2="35" y2="-50" stroke="#000" stroke-width="3"/>
+                <rect x="-20" y="130" width="115" height="100" fill="#777" stroke="#777" stroke-width="0"/>
+                <rect x="5" y="133" width="65" height="73" fill="white" stroke="#fff" stroke-width="2"/>
+                <rect x="20" y="50" width="30" height="85" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="35" y="190" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+                <text x="-10" y="60" font-size="40" fill="#000" font-weight="bold">S</text>
+                <line x1="35" y1="50" x2="35" y2="-150" stroke="#000" stroke-width="3"/>
+                <circle cx="35" cy="-50" r="8" fill="#000"/>
+                <line x1="35" y1="-50" x2="-100" y2="-50" stroke="#000" stroke-width="3"/>
+                <line x1="-100" y1="-50" x2="-100" y2="430" stroke="#000" stroke-width="3"/>
+                <rect x="315" y="130" width="115" height="100" fill="#777" stroke="#777" stroke-width="0"/>
+                <rect x="340" y="133" width="65" height="73" fill="white" stroke="#fff" stroke-width="2"/>
+                <rect x="358" y="50" width="30" height="85" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="375" y="190" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+                <text x="395" y="60" font-size="40" fill="#000" font-weight="bold">D</text>
+                <line x1="373" y1="50" x2="373" y2="-150" stroke="#000" stroke-width="3"/>
+                <line x1="373" y1="-150" x2="35" y2="-150" stroke="#000" stroke-width="3"/>
+
+                <line id="coverLine" x1="100" y1="-50" x2="115" y2="-50" stroke="white" stroke-width="4"/>
+
+                <g id="gsPower" style="display:none;">
+                    <line x1="100" y1="-65" x2="100" y2="-35" stroke="#000" stroke-width="3"/>
+                    <line x1="115" y1="-75" x2="115" y2="-25" stroke="#000" stroke-width="4"/>
+                    <line x1="85" y1="-30" x2="130" y2="-70" stroke="#000" stroke-width="3" marker-end="url(#arrowEnd)"/>
+                </g>
+                <rect id="channelRect_early" x="71" y="130" width="245" height="20" fill="#777" style="display:none;" />
+                <rect id="depletionRect" x="70" y="130" width="270" height="0" fill="white" style="display:none;" />
+                <rect id="channelRect" x="95" y="130" width="220" height="20" fill="#777" style="display:none;" />
+                <g id="electrons"></g>
+            </svg>
+        </div>
+
+        <p>
+            <strong>（2）$U_\mathrm{DS}$对导电沟道的控制：</strong>当$U_\mathrm{GS}\geq U_\mathrm{GS,th}$时，$U_\mathrm{DS}$影响沟道分布。
+            <button class="toggle-btn" id="dsToggle">开启演示</button>
+        </p>
+        <div class="slider-container hidden" id="dsModule">
+            <span id="udsValue">没有漏极电流</span>
+            <div class="slider-wrapper">
+                <div class="slider-mark left">$U_\mathrm{DS}$：</div>
+                <div class="slider-mark leftup">$0 \mathrm{V}$</div>
+                <div class="slider-mark rightdown">$U_\mathrm{DS}$较大</div>
+                <input type="range" id="udsSlider" min="0" max="5" step="0.1" value="0">
+                <!--<div class="slider-mark figure">$U_\mathrm{GS}$</div>-->
+            </div>
+        </div>
+        <div class="section hidden" id="dsCircuitSection">
+            <svg class="jfet-diagram" viewBox="-150 -200 500 650" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="dsArrow" markerWidth="10" markerHeight="7" refX="4" refY="3.5" orient="auto">
+                        <polygon points="0 0,8 3.5,0 7" fill="#000"/>
+                    </marker>
+                    <marker id="dsArrowEnd" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+                        <polygon points="0 0,6 2,0 4" fill="#000"/>
+                    </marker>
+                    <pattern id="dsSlashPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+                      <line x1="0" y1="8" x2="8" y2="0" stroke="#777" stroke-width="1.5"/>
+                    </pattern>
+                </defs>
+                <rect x="-50" y="130" width="510" height="240" fill="transparent" stroke="#000" stroke-width="2"/>
+                <rect x="140" y="370" width="120" height="20" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="200" y="350" font-size="36" fill="#000" text-anchor="middle">P型衬底</text>
+                <text x="210" y="430" font-size="40" fill="#000" font-weight="bold">B</text>
+                <line x1="200" y1="390" x2="200" y2="430" stroke="#000" stroke-width="3"/>
+                <line x1="-100" y1="430" x2="200" y2="430" stroke="#000" stroke-width="3"/>
+                <rect x="115" y="50" width="180" height="20" fill="#000" stroke="#000" stroke-width="2"/>
+                <text x="155" y="40" font-size="40" fill="#000" font-weight="bold">G</text>            
+                <line x1="200" y1="50" x2="200" y2="-50" stroke="#000" stroke-width="3"/>
+                <line x1="200" y1="-50" x2="35" y2="-50" stroke="#000" stroke-width="3"/>
+                <rect x="-20" y="130" width="115" height="100" fill="#777" stroke="#777" stroke-width="2"/>
+                <rect x="5" y="133" width="65" height="73" fill="white" stroke="#fff" stroke-width="2"/>
+                <text x="35" y="190" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+                <text x="-10" y="60" font-size="40" fill="#000" font-weight="bold">S</text>
+                <line x1="35" y1="50" x2="35" y2="-150" stroke="#000" stroke-width="3"/>
+                <circle cx="35" cy="-50" r="8" fill="#000"/>
+                <line x1="35" y1="-50" x2="-100" y2="-50" stroke="#000" stroke-width="3"/>
+                <line x1="-100" y1="-50" x2="-100" y2="430" stroke="#000" stroke-width="3"/>
+                <rect x="315" y="130" width="115" height="100" fill="#777" stroke="#777" stroke-width="2"/>
+                <rect x="340" y="133" width="65" height="73" fill="white" stroke="#fff" stroke-width="2"/>
+                <text x="375" y="190" font-size="36" fill="#000" text-anchor="middle">P<tspan font-size="22" dy="-20" dx="-2">+</tspan></text>
+                <text x="395" y="60" font-size="40" fill="#000" font-weight="bold">D</text>
+                <line x1="373" y1="50" x2="373" y2="-150" stroke="#000" stroke-width="3"/>
+                <line x1="373" y1="-150" x2="35" y2="-150" stroke="#000" stroke-width="3"/>
+                <line id="dsCoverLine" x1="100" y1="-50" x2="115" y2="-50" stroke="white" stroke-width="4"/>
+                <g id="dsPower" style="display:none;">
+                    <line x1="100" y1="-65" x2="100" y2="-35" stroke="#000" stroke-width="3"/>
+                    <line x1="115" y1="-75" x2="115" y2="-25" stroke="#000" stroke-width="4"/>
+                </g>
+                <line id="dsCoverLine_ds" x1="200" y1="-150" x2="245" y2="-150" stroke="white" stroke-width="4"/>
+                <g id="dsPower_ds" style="display:none;">
+                    <line x1="200" y1="-165" x2="200" y2="-135" stroke="#000" stroke-width="3"/>
+                    <line x1="215" y1="-175" x2="215" y2="-125" stroke="#000" stroke-width="4"/>
+                    <line x1="230" y1="-165" x2="230" y2="-135" stroke="#000" stroke-width="3"/>
+                    <line x1="245" y1="-175" x2="245" y2="-125" stroke="#000" stroke-width="4"/>
+                    <line x1="190" y1="-120" x2="265" y2="-175" stroke="#000" stroke-width="3" marker-end="url(#dsArrowEnd)"/>
+                </g>
+                <polygon id="dsChannelRect" fill="#777" style="display:none;" />
+                <rect id="pinchRect" x="70" y="130" width="27" height="20" fill="white" stroke="none" />
+                <rect id="pinchRectright" x="313" y="130" width="27" height="21" fill="white" stroke="none" />
+                <rect id="pinchRedRect" x="249" y="130" width="65" height="21" fill="#777" stroke-width="2"/>
+                <g id="dsElectrons"></g>
+                <rect x="-50" y="70" width="510" height="60" fill="white" stroke="#777" stroke-width="2"/>
+                <rect x="-50" y="70" width="510" height="60" fill="url(#dsSlashPattern)" stroke="#777" stroke-width="2"/>
+                <rect x="20" y="50" width="30" height="85" fill="#000" stroke="#000" stroke-width="2"/>
+                <rect x="358" y="50" width="30" height="85" fill="#000" stroke="#000" stroke-width="2"/>
+            </svg>
+            <!-- 输出特性曲线（仅新增，不改动原有内容） -->
+            <div class="curve-box">
+                <canvas id="curveCanvas"></canvas>
+                <div class="curve-label curve-label-title">输出特性曲线</div>
+                <div class="curve-label curve-label-R">可变电阻区</div>
+                <div class="curve-label curve-label-I">恒流区</div>
+                <div class="curve-label curve-label-x">$u_\mathrm{DS}$</div>
+                <div class="curve-label curve-label-y">$i_\mathrm{D}$</div>
+                <div class="curve-label curve-label-ugs">$U_\mathrm{GS}$</div>
+                <div class="curve-label curve-label-ugsth">$U_\mathrm{GS,th}$</div>
+                <div class="curve-origin">O</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section hidden" id="curveSection">
+        <div class="curve-box">
+            <canvas id="curveCanvas"></canvas>
+            <div class="curve-label curve-label-title">输出特性曲线</div>
+            <div class="curve-label-R">可变电阻区</div>
+            <div class="curve-label-I">恒流区</div>
+            <div class="curve-label-x">$u_\mathrm{DS}$</div>
+            <div class="curve-label-y">$i_\mathrm{D}$</div>
+            <div class="curve-label-ugs">$U_\mathrm{GS}$</div>
+            <div class="curve-origin">O</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ugsSlider = document.getElementById('ugsSlider');
+    const ugsValue = document.getElementById('ugsValue');
+    const gsToggle = document.getElementById('gsToggle');
+    const gsModule = document.getElementById('gsModule');
+    const circuitSection = document.getElementById('circuitSection');
+    const gsPower = document.getElementById('gsPower');
+    const coverLine = document.getElementById('coverLine');
+    const electrons = document.getElementById('electrons');
+    const depletionRect = document.getElementById('depletionRect');
+    const channelRect = document.getElementById('channelRect');
+    const channelRect_early = document.getElementById('channelRect_early');
+
+    const udsSlider = document.getElementById('udsSlider');
+    const udsValue = document.getElementById('udsValue');
+    const dsToggle = document.getElementById('dsToggle');
+    const dsModule = document.getElementById('dsModule');
+    const dsCircuitSection = document.getElementById('dsCircuitSection');
+    const dsPower = document.getElementById('dsPower');
+    const dsPower_ds = document.getElementById('dsPower_ds');
+    const dsCoverLine = document.getElementById('dsCoverLine');
+    const dsCoverLine_ds = document.getElementById('dsCoverLine_ds');
+    const dsElectrons = document.getElementById('dsElectrons');
+    const dsChannelRect = document.getElementById('dsChannelRect');
+    const pinchRect = document.getElementById('pinchRect');
+    const pinchRectright = document.getElementById('pinchRectright');
+    const pinchRedRect = document.getElementById('pinchRedRect');
+
+    const UGS_TH = 2.1;
+    const UGS_THearly = 2.0;
+    let lastUgs = 0;
+    let lastUds = 0;
+
+    const CHANNEL_BASE_Y = 130;
+    const CHANNEL_FIXED_HEIGHT = 20;
+    // 红块最大宽度
+    const MAX_RED_WIDTH = 75;
+    // 红块起始X坐标
+    const RED_START_X = 319;
+
+    let gsListenerBound = false;
+    let dsListenerBound = false;
+
+    function updateGSChannel() {
+        const ugs = parseFloat(ugsSlider.value);
+        gsPower.style.display = ugs > 0 ? 'block' : 'none';
+        coverLine.style.display = ugs > 0 ? 'block' : 'none';
+
+        if (ugs == UGS_THearly) {
+            channelRect_early.style.display = 'block';
+        } else {
+            channelRect_early.style.display = 'none';
+        }
+
+        if (ugs >= UGS_TH) {
+            depletionRect.style.display = 'block';
+            channelRect.style.display = 'block';
+            const extraHeight = (ugs - UGS_TH) * 12;
+            const depletionHeight = 10 + extraHeight;
+            depletionRect.setAttribute('y', CHANNEL_BASE_Y);
+            depletionRect.setAttribute('height', depletionHeight);
+            const channelY = CHANNEL_BASE_Y + depletionHeight;
+            channelRect.setAttribute('y', channelY);
+            channelRect.setAttribute('height', CHANNEL_FIXED_HEIGHT);
+        } else {
+            depletionRect.style.display = 'none';
+            channelRect.style.display = 'none';
+        }
+
+        updateGSElectrons(ugs);
+        if (ugs === 0) {
+            ugsValue.textContent = "没有沟道";
+            ugsValue.style.color = "#0277bd";
+        } else if (ugs < UGS_TH) {
+            ugsValue.textContent = "自由电子向绝缘层表面聚集";
+            ugsValue.style.color = "#0277bd";
+        } else {
+            ugsValue.textContent = ugs > lastUgs && Math.abs(ugs - UGS_TH) < 0.1 
+                ? "刚形成导电沟道" 
+                : ugs > lastUgs 
+                    ? "沟道增厚，沟道内自由电子增多" 
+                    : "耗尽区上移，沟道变薄";
+            ugsValue.style.color = (ugs > lastUgs && Math.abs(ugs - UGS_TH) < 0.1) ? "red" : "#0277bd";
+        }
+        lastUgs = ugs;
+    }
+
+    function updateGSElectrons(ugs) {
+        electrons.innerHTML = '';
+        if (ugs <= 0) return;
+        const xMin = 95, xMax = 315;
+        const depCount = Math.floor(ugs * 15);
+        if (ugs >= UGS_TH) {
+            const depY = parseFloat(depletionRect.getAttribute('y'));
+            const depH = parseFloat(depletionRect.getAttribute('height'));
+            for (let i = 0; i < depCount; i++) {
+                const x = xMin + Math.random() * (xMax - xMin);
+                const y = depY + Math.random() * depH;
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.5); c.setAttribute("fill", "#000");
+                electrons.appendChild(c);
+            }
+            const channelY = parseFloat(channelRect.getAttribute('y'));
+            const channelH = parseFloat(channelRect.getAttribute('height'));
+            const regionTop = channelY + channelH, regionBottom = 370;
+            const bulkCount = Math.floor(ugs * 20);
+            for (let i = 0; i < bulkCount; i++) {
+                const x = xMin + Math.random() * (xMax - xMin);
+                const t = Math.pow(Math.random(), 2);
+                const y = regionTop + t * (regionBottom - regionTop);
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.5); c.setAttribute("fill", "#000");
+                electrons.appendChild(c);
+            }
+        } else {
+            for (let i = 0; i < depCount; i++) {
+                const x = xMin + Math.random() * (xMax - xMin);
+                const minY = 130, maxY = 300;
+                const rand = Math.pow(Math.random(), 0.6);
+                const y = minY + rand * (maxY - minY);
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.5); c.setAttribute("fill", "#000");
+                electrons.appendChild(c);
+            }
+        }
+    }
+
+    function updateDSChannel() {
+        const uds = parseFloat(udsSlider.value);
+
+        dsPower.style.display = 'block' ;
+        dsCoverLine.style.display = 'block' ;
+        dsPower_ds.style.display = uds > 0 ? 'block' : 'none';
+        dsCoverLine_ds.style.display = uds > 0 ? 'block' : 'none';
+
+        if (uds === 0) {            
+            dsChannelRect.style.display = 'block';
+            dsChannelRect.setAttribute('points', '95,150 315,150 315,170 95,170');
+            pinchRectright.setAttribute('y', 130);
+            pinchRectright.setAttribute('height', 21);
+            // UDS=0时隐藏红块
+            pinchRedRect.setAttribute('width', 0);
+        }
+        else {
+            const offset = uds * 10;
+            const leftTop = 150 + offset;
+            const rightTop = 150 - offset;
+            const leftBottom = leftTop + 20;
+            const rightBottom = rightTop + 20;
+            dsChannelRect.setAttribute('points', `95,${leftTop} 315,${rightTop} 315,${rightBottom} 95,${leftBottom}`);
+            pinchRect.setAttribute('height', 20 + offset);
+
+            let height = Math.max(21 - offset, 0); 
+            pinchRectright.setAttribute('y', 130);
+            pinchRectright.setAttribute('height', height);
+
+            // ====================== 红色矩形动画逻辑 ======================
+            // 预夹断阈值 UGS_TH = 2.0
+            // 小于阈值：红块宽度0
+            if (uds < UGS_TH) {
+                pinchRedRect.setAttribute('x', RED_START_X);
+                pinchRedRect.setAttribute('width', 0);
+            } 
+            // 大于等于阈值：从314开始向左延伸，最大70
+            else {
+                // 计算当前宽度：0~65
+                let currentWidth = (uds - UGS_TH) / (5 - UGS_TH) * MAX_RED_WIDTH;
+                currentWidth = Math.min(currentWidth, MAX_RED_WIDTH);
+                // 计算X坐标：向左移动
+                let currentX = RED_START_X - currentWidth;
+                // 设置属性
+                pinchRedRect.setAttribute('x', currentX);
+                pinchRedRect.setAttribute('width', currentWidth);
+            }
+            // ==============================================================
+        }
+
+        updateDSElectrons(uds);
+        if (uds === 0) {
+            udsValue.textContent = "没有漏极电流\\(I_\\mathrm{D}\\)";
+            if (window.MathJax) MathJax.typeset();
+            udsValue.style.color = "#0277bd";
+        } else if (uds < UGS_TH & uds > lastUds) {
+            udsValue.innerHTML = "沟道倾斜，\\(I_\\mathrm{D}\\)随\\(U_\\mathrm{DS}\\)增大而增大";
+            if (window.MathJax) MathJax.typeset();
+            udsValue.style.color = "#0277bd";
+        } else {
+            udsValue.textContent = uds > lastUds && Math.abs(uds - UGS_TH) < 0.1
+                ? "沟道出现预夹断"
+                : uds > lastUds
+                    ? "夹断向源极延伸，\\(I_\\mathrm{D}\\)基本不变"
+                    : uds > UGS_TH
+                    ? "\\(U_\\mathrm{DS}\\)降低，夹断变小"
+                    : "夹断消失，进入可变电阻区";
+            udsValue.style.color = (uds > lastUds && Math.abs(uds - UGS_TH) < 0.1) ? "red" : "#0277bd";
+            if (window.MathJax) MathJax.typeset();
+        }
+        lastUds = uds;
+        redrawCurveWithDot();
+    }
+
+function updateDSElectrons(uds) {
+    dsElectrons.innerHTML = '';
+    if (uds <= 0) {
+        // UDS=0：上方大部分 + 下方少部分
+        const mainCount = 50;
+        const subCount = 15;
+
+        // 上方：斜纹下、多边形上
+        for (let i = 0; i < mainCount; i++) {
+            const x = 97 + Math.random() * (313 - 97);
+            const y = 130 + Math.random() * 20;
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.2); c.setAttribute("fill", "#000");
+            dsElectrons.appendChild(c);
+        }
+        // 下方：衬底（保持不变）
+        for (let i = 0; i < subCount; i++) {
+            const x = 97 + Math.random() * (313 - 97);
+            const y = 170 + Math.random() * 130;
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.2); c.setAttribute("fill", "#000");
+            dsElectrons.appendChild(c);
+        }
+        return;
+    }
+
+    // ==========================
+    // UDS > 0：上方电子跟随倾斜 + 下方衬底电子保持不变
+    // ==========================
+    const offset = uds * 10;
+    const leftTop = 150 + offset;
+    const rightTop = 150 - offset;
+
+    // 上方电子数量
+    const mainCount = 50;
+    // 下方衬底电子数量（固定不变！）
+    const subCount = 15;
+
+    // 1. 上方电子：跟随多边形倾斜
+    for (let i = 0; i < mainCount; i++) {
+        const x = 97 + Math.random() * (315 - 97);
+        const t = (x - 95) / (315 - 95);
+        const polyTopY = rightTop + (leftTop - rightTop) * (1 - t);
+        const y = 130 + Math.random() * (polyTopY - 130);
+
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.2); c.setAttribute("fill", "#000");
+        dsElectrons.appendChild(c);
+    }
+
+    // 2. 下方衬底电子：数量不变、随机分布（完全保持原样）
+    for (let i = 0; i < subCount; i++) {
+        const x = 97 + Math.random() * (313 - 97);
+        const y = 170 + Math.random() * 130;
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3.2); c.setAttribute("fill", "#000");
+        dsElectrons.appendChild(c);
+    }
+}
+
+    function closeGSDemo() {
+        gsToggle.textContent = '开启演示';
+        gsToggle.classList.remove('off');
+        gsModule.classList.add('hidden');
+        circuitSection.classList.add('hidden');
+        gsPower.style.display = 'none';
+        coverLine.style.display = 'none';
+        depletionRect.style.display = 'none';
+        channelRect.style.display = 'none';
+        electrons.innerHTML = '';
+        ugsSlider.value = 0;
+        ugsValue.textContent = "没有沟道";
+        if (gsListenerBound) {
+            ugsSlider.removeEventListener('input', updateGSChannel);
+            gsListenerBound = false;
+        }
+    }
+
+    function closeDSDemo() {
+        dsToggle.textContent = '开启演示';
+        dsToggle.classList.remove('off');
+        dsModule.classList.add('hidden');
+        dsCircuitSection.classList.add('hidden');
+        dsPower.style.display = 'none';
+        dsCoverLine.style.display = 'none';
+        dsChannelRect.style.display = 'none';
+        dsElectrons.innerHTML = '';
+        udsSlider.value = 0;
+        udsValue.textContent = "没有沟道";
+        // 关闭演示时重置红块
+        pinchRedRect.setAttribute('x', 249);
+        pinchRedRect.setAttribute('width', 65);
+        if (dsListenerBound) {
+            udsSlider.removeEventListener('input', updateDSChannel);
+            dsListenerBound = false;
+        }
+    }
+
+    function openGSDemo() {
+        closeDSDemo();
+        gsToggle.textContent = '关闭演示';
+        gsToggle.classList.add('off');
+        gsModule.classList.remove('hidden');
+        circuitSection.classList.remove('hidden');
+        if (!gsListenerBound) {
+            ugsSlider.addEventListener('input', updateGSChannel);
+            gsListenerBound = true;
+        }
+        updateGSChannel();
+    }
+
+    function openDSDemo() {
+        closeGSDemo();
+        dsToggle.textContent = '关闭演示';
+        dsToggle.classList.add('off');
+        dsModule.classList.remove('hidden');
+        dsCircuitSection.classList.remove('hidden');
+        if (!dsListenerBound) {
+            udsSlider.addEventListener('input', updateDSChannel);
+            dsListenerBound = true;
+        }
+        updateDSChannel();
+    }
+
+    gsToggle.addEventListener('click', function () {
+        if (!this.classList.contains('off')) {
+            openGSDemo();
+        } else {
+            closeGSDemo();
+        }
+    });
+
+    dsToggle.addEventListener('click', function () {
+        if (!this.classList.contains('off')) {
+            openDSDemo();
+        } else {
+            closeDSDemo();
+        }
+    });
+
+    openGSDemo();
+
+    // ===================== 输出特性曲线（仅新增，不影响原有代码） =====================
+function initCurve() {
+  const I_MAX = 4.0;
+  const PAD = 30;
+  function drawArrow(ctx, x1, y1, x2, y2, size=6) {
+    const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+    const ux=dx/len, uy=dy/len;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const px=x2-ux*size, py=y2-uy*size;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(px-uy*size/2, py+ux*size/2);
+    ctx.lineTo(px+uy*size/2, py-ux*size/2);
+    ctx.closePath(); ctx.fill();
+  }
+
+  window.redrawCurveWithDot = function() {
+    const canvas = document.getElementById('curveCanvas');
+    if(!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * dpr;
+    canvas.height = r.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.lineWidth=1.5; ctx.strokeStyle='#000';
+    drawArrow(ctx,PAD,H-PAD,W-PAD,H-PAD);
+    drawArrow(ctx,PAD,H-PAD,PAD,PAD);
+
+    ctx.lineWidth=1.8; ctx.strokeStyle='#000';
+    const beta=80;
+    const curves = [];
+    const ibList = [10,20,30,40];
+
+    ibList.forEach((ib)=>{
+      let points = [];
+      ctx.beginPath();
+      for(let u=0;u<=10;u+=0.1){
+        const ic=(ib*beta/1200)*(1-Math.exp(-u*1));
+        const x=PAD+(u/10)*(W-PAD*2);
+        const y=H-PAD-(ic/I_MAX)*(H-PAD*2);
+        points.push({x,y,u,ic});
+        u===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      curves.push(points);
+    });
+
+    ctx.beginPath();
+    ctx.setLineDash([5,3]);
+    ctx.strokeStyle='#0066ff';
+    ctx.lineWidth=2;
+    ctx.moveTo(PAD,H-PAD);
+    for(let u=0;u<=3.8;u+=0.2){
+      const yv=0.074*u*u;
+      const x=PAD+(u/10)*(W-PAD*2);
+      const y=H-PAD-yv*(H-PAD*2);
+      ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+const uds = parseFloat(udsSlider.value);
+const tar = curves[2] || curves[0];
+
+// 预夹断阈值（和你电路里一致）
+const UGS_TH = 2.1;
+let targetU = uds;
+
+// 达到预夹断后，电压向右多走 3 个电压点，到蓝色虚线位置
+if (uds >= UGS_TH) {
+  targetU = uds +0.4;
+}
+
+let p = tar[0];
+for (let pt of tar) {
+  if (pt.u >= targetU) {
+    p = pt;
+    break;
+  }
+}
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fillStyle='red';
+    ctx.fill();
+  }
+}
+
+// 自动初始化
+window.addEventListener('load', () => {
+  initCurve();
+  // 打开UDS演示时自动绘制
+  const observer = new MutationObserver(() => {
+    if(!dsCircuitSection.classList.contains('hidden')){
+      redrawCurveWithDot();
+    }
+  });
+  observer.observe(dsCircuitSection, { attributes: true });
+});
+</script>
+</body>
+</html>
