@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>温度对BJT管特性曲线的影响</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: initial;
+            padding: 30px 20px;
+            font-family: "Microsoft YaHei", sans-serif;
+            line-height: 1.8;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 18px;
+        }
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            font-size: 16px;
+            color: #222;
+        }
+        p {
+            margin-bottom: 3px;
+            text-align: justify;
+        }
+
+        .slider-container {
+            max-width: 900px;
+            margin: 2px auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .slider-container label {
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        .slider-container input {
+            flex: 1;
+            cursor: pointer;
+        }
+        .temp-status {
+            font-size: 15px;
+            min-width: 100px;
+            font-weight: bold;
+        }
+
+        .chart-wrapper {
+            max-width: 900px;
+            margin: 0px auto 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 0px;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-group {
+            position: relative;
+            width: 100%;
+            height: 240px;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+        .chart-title {
+            position: absolute;
+            top: 25px;
+            left: 70px;
+            width: 80%;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #222;
+            z-index: 10;
+            background: rgba(255,255,255,0);
+            padding: 2px 0;
+        }
+        .axis-label {
+            position: absolute;
+            font-size: 14px;
+            z-index: 5;
+        }
+        .x-label {
+            right: 30px;
+            bottom: 20px;
+        }
+        .y-label {
+            left: 55px;
+            top: 45px;
+            transform-origin: center left;
+            transform: rotate(0deg);
+        }
+        .o-label {
+            left: 35px;
+            bottom: 30px;
+        }
+        .ubeon-label {
+            right: 240px;
+            bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+    <h1>温度对BJT管特性曲线的影响</h1>
+    <div class="content">
+        <p>1. 温度升高时，本征激发加剧，参与漂移运动的平衡少子数目增多，\(I_\mathrm{CBO}\)增大。</p>
+        <p>2. 温度升高时，发射区注入到基区的载流子在基区复合减小，集电极电流\(i_\mathrm{C}\)增大，\(\beta\)增大。</p>
+        <p>3. 集电结较宽，温度升高导致\(U_\mathrm{BR,CBO}\)和\(U_\mathrm{BR,CEO}\)增大。</p>
+    </div>
+
+    <div class="slider-container">
+        <label>温度调节：</label>
+        <input type="range" id="tempSlider" min="0" max="100" value="0">
+        <span class="temp-status" id="tempStatus"></span>
+    </div>
+
+    <div class="chart-wrapper">
+        <div class="chart-group">
+            <div class="chart-title">输入特性曲线\(i_\mathrm{B} = f(u_\mathrm{BE})|_{u_\mathrm{CE}=\mathrm{C}}\)</div>
+            <canvas id="inputChart"></canvas>
+            <div class="axis-label x-label">\(u_\mathrm{BE}\,\mathrm{(V)}\)</div>
+            <div class="axis-label y-label">\(i_\mathrm{B}\,\mathrm{(\mu A)}\)</div>
+            <div class="axis-label o-label">\(O\)</div>
+            <div class="axis-label ubeon-label">\(U_\mathrm{on}\)</div>
+        </div>
+
+        <div class="chart-group">
+            <div class="chart-title">输出特性曲线\(i_\mathrm{C} = f(u_\mathrm{CE})|_{u_\mathrm{BE}=\mathrm{C}}\)</div>
+            <canvas id="outputChart"></canvas>
+            <div class="axis-label x-label">\(u_\mathrm{CE}\,\mathrm{(V)}\)</div>
+            <div class="axis-label y-label">\(i_\mathrm{C}\,\mathrm{(mA)}\)</div>
+            <div class="axis-label o-label">\(O\)</div>
+        </div>
+    </div>
+
+    <script>
+        let lastSliderValue = 0;
+
+        // 箭头绘制
+        function drawArrow(ctx, x1, y1, x2, y2) {
+            const headLen = 8;
+            const dx = x2 - x1, dy = y2 - y1;
+            const angle = Math.atan2(dy, dx);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function initCanvas(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            return { ctx, w: rect.width, h: rect.height, pad: 50 };
+        }
+
+        // 统一重绘曲线
+        function drawAllCharts(sliderVal) {
+            const iCanvas = document.getElementById('inputChart');
+            const oCanvas = document.getElementById('outputChart');
+            const iCtx = iCanvas.getContext('2d');
+            const oCtx = oCanvas.getContext('2d');
+            iCtx.clearRect(0, 0, iCanvas.width, iCanvas.height);
+            oCtx.clearRect(0, 0, oCanvas.width, oCanvas.height);
+
+            // 滑块最左端 = 室温基准
+            const delta = sliderVal / 150;       // 0~1
+            const UT = 0.026 + delta * 0.01;    // 温度越高，热电压越大
+            const voltShift = delta * 0.025;      // 开启电压左移
+            const currentGain = 1 + delta * 1.4; // 电流放大
+
+            // 输入特性
+            (function drawInput() {
+                const { ctx, w, h, pad } = initCanvas('inputChart');
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#000';
+                drawArrow(ctx, pad, h - pad, w - pad, h - pad);
+                drawArrow(ctx, pad, h - pad, pad, pad);
+
+                const UBE_max = 0.8;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                for (let ube = 0; ube <= 0.326; ube += 0.001) {
+                    let ib = 0;
+                    const baseVolt = 0.2 - voltShift;
+                    if (ube > baseVolt) {
+                        ib = 0.6 * currentGain * Math.exp((ube - baseVolt) / UT);
+                    }
+                    if (ib > 80) ib = 80;
+
+                    const x = pad + (ube / UBE_max) * (w - pad * 2);
+                    const y = h - pad - (ib / 100) * (h - pad * 2);
+                    ube === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            })();
+
+            // 输出特性
+            (function drawOutput() {
+                const { ctx, w, h, pad } = initCanvas('outputChart');
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#000';
+                drawArrow(ctx, pad, h - pad, w - pad, h - pad);
+                drawArrow(ctx, pad, h - pad, pad, pad);
+
+                const betaMul = 1 + delta * 0.7;
+
+                function curve(ib) {
+                    ctx.beginPath();
+                    for (let uce = 0; uce <= 20; uce += 0.05) {
+                        let ic = ib * betaMul * (1 - Math.exp(-uce * 0.6)) + 0.008 * uce;
+                        if (ic > 40) ic = 40;
+                        const x = pad + (uce / 20) * (w - pad * 2);
+                        const y = h - pad - (ic / 40) * (h - pad * 2);
+                        uce === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+
+                [5, 10, 15, 20, 25].forEach(i => curve(i));
+            })();
+        }
+
+        // 滑块监听
+        const slider = document.getElementById('tempSlider');
+        const status = document.getElementById('tempStatus');
+
+        slider.addEventListener('input', function () {
+            const curr = parseInt(this.value);
+            if (curr > lastSliderValue) {
+                status.textContent = "温度升高";
+                status.style.color = "red";
+            } else if (curr < lastSliderValue) {
+                status.textContent = "温度降低";
+                status.style.color = "blue";
+            } else {
+                status.textContent = "";
+            }
+            lastSliderValue = curr;
+            drawAllCharts(curr);
+        });
+
+        // 初始：最左端=室温，直接绘制
+        window.onload = () => drawAllCharts(0);
+    </script>
+</body>
+</html>
