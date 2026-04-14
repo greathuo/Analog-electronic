@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微分运算电路</title>
+    <style>
+        body {
+            font-family: "YaHei", sans-serif;
+            background-color: initial;
+            margin: 0;
+            padding: 30px 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .circuit-section {
+            float: right;
+            width: 55%;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .circuit-section img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .text-section {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #222;
+            text-align: justify;
+            text-indent: 2em;
+        }
+        p {
+            margin: 4px 0;
+        }
+        .latex-formula {
+            font-size: 14px;
+            margin: 10px 0;
+            text-indent: 0;
+        }
+        .input-group {
+            margin-top: 8px;
+            font-size: 14px;
+            text-indent: 0;
+        }
+        .input-group label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        /* 按钮基础样式 */
+        #pauseBtn {
+            padding: 4px 10px;
+            font-size: 14px;
+            margin-left: 10px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+    </style>
+
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$']] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <h1>微分运算电路</h1>
+
+    <div class="text-section">
+        <div class="circuit-section">
+            <img src="images/circuit.png" alt="differentiator">
+        </div>
+        <p>微分电路是积分电路的逆运算，输出电压$u_\mathrm{o}$与输入电压$u_\mathrm{i}$对时间的微商成反比。</p>
+        <p>图示电路中，电阻$R_1$和电容$C_1$，用于抑制高频噪声；两个稳压管$D_\mathrm{z1}$和$D_\mathrm{z2}$用于限制输出电压幅度。</p>
+        <p>该电路的输出输入电压关系为：</p>
+        <div class="latex-formula">
+            $$u_\mathrm{o}\left(t\right)=-RC\frac{du_\mathrm{i}\left(t\right)}{dt}$$
+        </div>
+
+        <div class="input-group">
+            <label><input type="radio" name="u_I" value="sin" checked> 正弦波</label>
+            <label><input type="radio" name="u_I" value="triangle"> 三角波</label>
+            <label><input type="radio" name="u_I" value="square"> 方波</label>
+            <button id="pauseBtn">暂停播放</button>
+        </div>
+    </div>
+
+<!-- ==================== 波形区域 ==================== -->
+<div style="margin-top:30px; position:relative;">
+    <canvas id="waveCanvas" style="width:80%; aspect-ratio:8/3; background:initial; border:none;"></canvas>
+
+    <div style="position:absolute; left:9.5%; top:0px; color:blue; font-size:14px;">$u_\mathrm{i}/$</div>
+    <div style="position:absolute; left:16%; top:0px; color:red; font-size:14px;">$u_\mathrm{o}$</div>
+    <div style="position:absolute; right:19%; top:49%; color:black; font-size:14px;">$t$</div>
+    <div style="position:absolute; left:4%; top:49%; color:black; font-size:14px;">$O$</div>
+</div>
+
+<script>
+const canvas = document.getElementById('waveCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 300;
+const cx = 80, cy = canvas.height/2;
+const xScale = 120, yScale = 70;
+let yTop = 30;
+
+let currentX = 0;
+const maxX = canvas.width - 100;
+const speed = 3;
+let waveType = 'sin';
+let isPaused = false;
+let animationId = null;
+
+const pauseBtn = document.getElementById('pauseBtn');
+
+// 绘制坐标轴
+function drawAxis(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='#000'; ctx.lineWidth=6;
+
+    let xEnd = canvas.width;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(xEnd,cy); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(xEnd, cy); ctx.lineTo(xEnd-20, cy-10);
+    ctx.moveTo(xEnd, cy); ctx.lineTo(xEnd-20, cy+10); ctx.stroke();
+
+    let yBottom = canvas.height-30;
+    ctx.beginPath(); ctx.moveTo(cx,yTop); ctx.lineTo(cx,yBottom); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, yTop); ctx.lineTo(cx-10, yTop+20);
+    ctx.moveTo(cx, yTop); ctx.lineTo(cx+10, yTop+20); ctx.stroke();
+
+    ctx.font='16px Arial'; ctx.fillStyle='#000';
+    ctx.fillText('0', cx-10, cy+6);
+}
+
+// 主动画
+function animateWave() {
+    if (isPaused) {
+        animationId = requestAnimationFrame(animateWave);
+        return;
+    }
+
+    drawAxis();
+
+    if (waveType === 'sin') {
+        // 正弦输入 → 余弦微分输出
+        ctx.strokeStyle = 'blue'; ctx.lineWidth=4; ctx.beginPath();
+        for(let x=0;x<=currentX;x++){
+            let t=(x-cx)/xScale;
+            let y=cy-Math.sin(2*t)*yScale;
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle='#f00'; ctx.lineWidth=4; ctx.beginPath();
+        for(let x=0;x<=currentX;x++){
+            let t=(x-cx)/xScale;
+            let y=cy-Math.cos(2*t)*yScale*1.5;
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+    }
+    else if (waveType === 'triangle') {
+        // 标准线性三角波
+        ctx.strokeStyle = 'blue'; ctx.lineWidth=4; ctx.beginPath();
+        for(let x=0;x<=currentX;x++){
+            let t = (x - cx) / 100;
+            let phase = (2 * t / Math.PI) % 2;
+            if (phase > 1) phase = 2 - phase;
+            let y = cy - (phase * 2 - 1) * 60;
+            x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        // 三角波微分 → 方波
+        ctx.strokeStyle='#f00'; ctx.lineWidth=4; ctx.beginPath();
+        for(let x=0;x<=currentX;x++){
+            let t = (x - cx) / 100;
+            let phase = (2 * t / Math.PI) % 2;
+            let y = (phase < 1) ? cy + 50 : cy - 50;
+            x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+    }
+    else if (waveType === 'square') {
+        // 方波输入
+        ctx.strokeStyle='blue'; ctx.lineWidth=4; ctx.beginPath();
+        for(let x=0;x<=currentX;x++){
+            let t=(x-cx)/160;
+            let val = Math.sin(2.5*t);
+            let y = val > 0 ? cy-60 : cy+60;
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        // ==============================
+        // ✅ 已修改：尖脉冲区域不画0线，只画尖脉冲
+        // ==============================
+        ctx.strokeStyle = '#f00';
+        ctx.lineWidth = 4;
+
+        let lastVal = 0;
+        let prevX = 0;
+
+        for (let x = 0; x <= currentX; x++) {
+            let t = (x - cx) / 160;
+            let val = Math.sin(2.5 * t);
+            let isEdge = false;
+            let edgeWidth = 15;
+
+            // 判断是否为跳变沿（尖脉冲位置）
+            if ((val > 0 && lastVal <= 0) || (val <= 0 && lastVal > 0)) {
+                isEdge = true;
+
+                // 跳变前画0线
+                ctx.beginPath();
+                ctx.moveTo(prevX, cy);
+                ctx.lineTo(x, cy);
+                ctx.stroke();
+
+                // 画尖脉冲
+                ctx.beginPath();
+                if (val > 0 && lastVal <= 0) {
+                    ctx.moveTo(x, cy);
+                    ctx.lineTo(x, cy + 90);
+                    ctx.lineTo(x + edgeWidth, cy);
+                } else {
+                    ctx.moveTo(x, cy);
+                    ctx.lineTo(x, cy - 90);
+                    ctx.lineTo(x + edgeWidth, cy);
+                }
+                ctx.stroke();
+
+                // 跳过尖脉冲区域，不画0线
+                prevX = x + edgeWidth;
+                x += edgeWidth;
+            }
+
+            lastVal = val;
+        }
+
+        // 最后一段画0线
+        if (prevX < currentX) {
+            ctx.beginPath();
+            ctx.moveTo(prevX, cy);
+            ctx.lineTo(currentX, cy);
+            ctx.stroke();
+        }
+    }
+
+    currentX += speed;
+    if (currentX > maxX) currentX = 0;
+    animationId = requestAnimationFrame(animateWave);
+}
+
+// 切换波形
+document.querySelectorAll('input[name="u_I"]').forEach(radio => {
+    radio.addEventListener('change', ()=>{
+        waveType = document.querySelector('input[name="u_I"]:checked').value;
+        currentX=0;
+    });
+});
+
+// 暂停/恢复 + 切换颜色
+pauseBtn.addEventListener('click', () => {
+    isPaused = !isPaused;
+    if (isPaused) {
+        pauseBtn.textContent = '恢复播放';
+        pauseBtn.style.backgroundColor = '#2c7dfa'; // 蓝色
+    } else {
+        pauseBtn.textContent = '暂停播放';
+        pauseBtn.style.backgroundColor = '#6c757d'; // 灰色
+    }
+});
+
+// 初始颜色
+pauseBtn.style.backgroundColor = '#6c757d';
+animateWave();
+</script>
+</body>
+</html>
