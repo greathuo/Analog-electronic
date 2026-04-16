@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电压比较器</title>
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        /* 标题行：水平布局，居中+右侧按钮 */
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+        }
+        /* 全局暂停按钮：固定在标题行最右侧 */
+        #globalPauseBtn {
+            position: absolute;
+            right: 0;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        /* 暂停状态：深灰色 */
+        #globalPauseBtn.pause {
+            background-color: #444;
+        }
+        /* 恢复状态：绿色 */
+        #globalPauseBtn.resume {
+            background-color: #28a745;
+        }
+
+        .desc {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        p { margin: 4px 0; }
+
+        .switch-btn {
+            padding: 5px 10px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c7dfa;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .switch-btn.active {
+            background-color: #6c757d;
+        }
+
+        .demo-section {
+            margin-top: 0px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .circuit-img {
+            max-width: 80%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+        }
+
+        .params {
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+            color: #000;
+        }
+
+        .wave-container {
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            margin: 10px 0;
+        }
+        .waveCanvas {
+            width: 100%;
+            aspect-ratio: 8/3;
+            background: initial;
+            border: none;
+        }
+        .wave-label {
+            position: absolute;
+            font-size: 14px;
+        }
+        .ui-label { left: 11.5%; top: 0; color: blue; }
+        .uo-label { left: 18%; top: 0; color: red; }
+        .t-label { right: 10%; top: 49%; color: black; }
+        .o-label { left: 5%; top: 49%; color: black; }
+        .Uref-label { left: 1.5%; top: 26%; color: black; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 标题行：包含标题 + 全局暂停按钮 -->
+    <div class="title-row">
+        <h1>电压比较器</h1>
+        <button id="globalPauseBtn" class="pause">暂停演示</button>
+    </div>
+
+    <p class="desc">
+        <b>（1）单门限电压比较器：运放处于开环状态，工作在饱和区，只有一个门限电压。</b>
+        <button class="switch-btn active" id="singleBtn">关闭演示</button>
+    </p>
+    <div class="demo-section" id="singleDemo">
+        <img src="images/singleTH.png" alt="单门限电压比较器电路图" class="circuit-img">
+        <div class="params">
+            参考电压$U_\mathrm{ref}=3\ (\mathrm{V})$，输入信号$u_\mathrm{i}=4\sin100t \ (\mathrm{V})$，
+            <br>稳压管导通压降$U_\mathrm{D}=0.7\ (\mathrm{V})$，稳压值$U_\mathrm{Z}=5\ (\mathrm{V})$。
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="waveCanvas"></canvas>
+            <div class="wave-label ui-label">$u_\mathrm{i}/$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+            <div class="wave-label Uref-label">$U_\mathrm{ref}$</div>
+        </div>
+    </div>
+
+    <p class="desc" style="margin-top:24px;">
+        <b>（2）迟滞比较器：输入电压$u_\mathrm{i}$单调变化时输出电压$u_\mathrm{o}$只跃变一次。</b>
+        <button class="switch-btn" id="hysteresisBtn">打开演示</button>
+    </p>
+    <div class="demo-section" id="hysteresisDemo" style="display:none;">
+        <img src="images/hysteresis.png" alt="迟滞比较器电路图" class="circuit-img">
+        <div class="params">
+            参考电压$U_\mathrm{ref}=3\ (\mathrm{V})$，输入信号$u_\mathrm{i}=4\sin100t \ (\mathrm{V})$，
+            <br>稳压管导通压降$U_\mathrm{D}=0.7\ (\mathrm{V})$，稳压值$U_\mathrm{Z}=5\ (\mathrm{V})$，
+            <br>电阻$R_\mathrm{f}=4.4\ (\mathrm{k\Omega})$，$R_2=1\ (\mathrm{k\Omega})$。可求得：
+        </div>
+        <div class="params">
+            $U_\mathrm{T+}=\frac{R_\mathrm{f}}{R_\mathrm{f}+R_2}U_\mathrm{ref}+\frac{R_2}{R_\mathrm{f}+R_2}(U_\mathrm{D}+U_\mathrm{Z})=3.5\ (\mathrm{V})$
+            $U_\mathrm{T-}=\frac{R_\mathrm{f}}{R_\mathrm{f}+R_2}U_\mathrm{ref}-\frac{R_2}{R_\mathrm{f}+R_2}(U_\mathrm{D}+U_\mathrm{Z})\approx ‌1.4\ (\mathrm{V})$
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="hysteresisCanvas"></canvas>
+            <div class="wave-label ui-label">$u_\mathrm{i}/$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+            <div class="wave-label Uref-label" style="top:22%; font-size: 12px;">$U_\mathrm{T+}$</div>
+            <div class="wave-label Uref-label" style="top:32%; font-size: 12px;">$U_\mathrm{T-}$</div>
+        </div>
+    </div>
+
+    <p class="desc" style="margin-top:24px;">
+        <b>（3）窗口比较器：双门限比较器，输入电压$u_\mathrm{i}$单方向变化时，输出电压$u_\mathrm{o}$跳变两次。</b>
+        <button class="switch-btn" id="windowBtn">打开演示</button>
+    </p>
+    <div class="demo-section" id="windowDemo" style="display:none;">
+        <img src="images/window.png" alt="窗口比较器电路图" class="circuit-img">
+        <div class="params">
+            $U_\mathrm{RH}=3.5\ (\mathrm{V})$，$U_\mathrm{RL}=0.5\ (\mathrm{V})$，<br>输入信号$u_\mathrm{i}=4\sin100t \ (\mathrm{V})$，
+            <br>稳压管导通压降$U_\mathrm{D}=0.7\ (\mathrm{V})$，稳压值$U_\mathrm{Z}=5\ (\mathrm{V})$。
+        </div>
+        <div class="params">
+            工作特性：当$U_\mathrm{RL} < u_\mathrm{i} < U_\mathrm{RH}$ 时，输出电压$u_\mathrm{o}=0$；否则输出稳压值$U_\mathrm{Z}$。
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="windowCanvas"></canvas>
+            <div class="wave-label ui-label">$u_\mathrm{i}/$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+            <div class="wave-label Uref-label" style="top:22%; font-size: 12px;">$U_\mathrm{RH}$</div>
+            <div class="wave-label Uref-label" style="top:32%; font-size: 12px;">$U_\mathrm{RL}$</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 按钮
+    const singleBtn = document.getElementById('singleBtn');
+    const hysteresisBtn = document.getElementById('hysteresisBtn');
+    const windowBtn = document.getElementById('windowBtn');
+    const globalPauseBtn = document.getElementById('globalPauseBtn');
+    
+    // 演示区域
+    const singleDemo = document.getElementById('singleDemo');
+    const hysteresisDemo = document.getElementById('hysteresisDemo');
+    const windowDemo = document.getElementById('windowDemo');
+
+    // 画布
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const hysCanvas = document.getElementById('hysteresisCanvas');
+    const hysCtx = hysCanvas.getContext('2d');
+    const winCanvas = document.getElementById('windowCanvas');
+    const winCtx = winCanvas.getContext('2d');
+
+    // 共享参数
+    const w = 800;
+    const h = 300;
+    canvas.width = w; canvas.height = h;
+    hysCanvas.width = w; hysCanvas.height = h;
+    winCanvas.width = w; winCanvas.height = h;
+
+    const cx = 80;
+    const cy = h / 2;
+    const xScale = 490;
+    const yScale = 24;
+    const yTop = 30;
+    const Uref = 3;
+    const uiAmplitude = 4;
+    const maxScanX = w - 130;
+
+    // 门限
+    const UTH1 = 3.5;
+    const UTH2 = 1.4;
+    const URH = 3.5;
+    const URL = 0.5;
+    
+    let outputState = false;
+    let scanX = 0;
+    let animationId = null;
+    let isPaused = false;
+
+    // 通用坐标轴
+    function drawAxis(ctx) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 6;
+        let xEnd = w - 80;
+        ctx.beginPath();
+        ctx.moveTo(0, cy); ctx.lineTo(xEnd, cy); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(xEnd, cy); ctx.lineTo(xEnd-20, cy-10);
+        ctx.moveTo(xEnd, cy); ctx.lineTo(xEnd-20, cy+10); ctx.stroke();
+
+        let yBottom = h - 30;
+        ctx.beginPath();
+        ctx.moveTo(cx, yTop); ctx.lineTo(cx, yBottom); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx, yTop); ctx.lineTo(cx-10, yTop+20);
+        ctx.moveTo(cx, yTop); ctx.lineTo(cx+10, yTop+20); ctx.stroke();
+    }
+
+    // 单门限参考线
+    function drawRefLine(ctx) {
+        ctx.save();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10,5]);
+        let y = cy - Uref * (yScale/1.5);
+        ctx.beginPath();
+        ctx.moveTo(cx, y); ctx.lineTo(w-130, y); ctx.stroke();
+        ctx.restore();
+    }
+
+    // 迟滞双门限
+    function drawHysLines(ctx) {
+        ctx.save();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10,5]);
+        let y1 = cy - UTH1 * (yScale/1.5);
+        let y2 = cy - UTH2 * (yScale/1.5);
+        ctx.beginPath();
+        ctx.moveTo(cx, y1); ctx.lineTo(w-130, y1);
+        ctx.moveTo(cx, y2); ctx.lineTo(w-130, y2); ctx.stroke();
+        ctx.restore();
+    }
+    
+    // 窗口双门限
+    function drawWindowLines(ctx) {
+        ctx.save();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10,5]);
+        let y1 = cy - URH * (yScale/1.5);
+        let y2 = cy - URL * (yScale/1.5);
+        ctx.beginPath();
+        ctx.moveTo(cx, y1); ctx.lineTo(w-130, y1);
+        ctx.moveTo(cx, y2); ctx.lineTo(w-130, y2); ctx.stroke();
+        ctx.restore();
+    }
+
+    // 单门限波形
+    function drawSingleScan() {
+        drawAxis(ctx);
+        drawRefLine(ctx);
+        ctx.lineWidth =4;
+        ctx.strokeStyle='#00f';
+        ctx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            let y=cy-ui*(yScale/1.5);
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle='#f00';
+        ctx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            let uo = ui > Uref ? -5.7 : 5.7;
+            let y=cy-uo*(yScale/1.5);
+            x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+    }
+
+    // 迟滞比较器
+    function drawHysteresisScan() {
+        drawAxis(hysCtx);
+        drawHysLines(hysCtx);
+        hysCtx.lineWidth=4;
+        hysCtx.strokeStyle='#00f';
+        hysCtx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            let y=cy-ui*(yScale/1.5);
+            x===0?hysCtx.moveTo(x,y):hysCtx.lineTo(x,y);
+        }
+        hysCtx.stroke();
+
+        hysCtx.strokeStyle='#f00';
+        hysCtx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            if(ui>UTH1) outputState=true;
+            if(ui<UTH2) outputState=false;
+            let uo=outputState?-5.7:5.7;
+            let y=cy-uo*(yScale/1.5);
+            x===0?hysCtx.moveTo(x,y):hysCtx.lineTo(x,y);
+        }
+        hysCtx.stroke();
+    }
+    
+    // 窗口比较器
+    function drawWindowScan() {
+        drawAxis(winCtx);
+        drawWindowLines(winCtx);
+        winCtx.lineWidth=4;
+        winCtx.strokeStyle='#00f';
+        winCtx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            let y=cy-ui*(yScale/1.5);
+            x===0?winCtx.moveTo(x,y):winCtx.lineTo(x,y);
+        }
+        winCtx.stroke();
+
+        winCtx.strokeStyle='#f00';
+        winCtx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            let t=(x-cx)/xScale;
+            let ui=uiAmplitude*Math.sin(10*t);
+            let uo = (ui > URL && ui < URH) ? -5.7 : 5.7;
+            let y=cy-uo*(yScale/1.5);
+            x===0?winCtx.moveTo(x,y):winCtx.lineTo(x,y);
+        }
+        winCtx.stroke();
+    }
+
+    // 动画主循环
+    function animate(){
+        if(!isPaused){
+            scanX+=2.5;
+            if(scanX>maxScanX) scanX=0;
+        }
+
+        if(singleDemo.style.display!='none') drawSingleScan();
+        if(hysteresisDemo.style.display!='none') drawHysteresisScan();
+        if(windowDemo.style.display!='none') drawWindowScan();
+        
+        animationId=requestAnimationFrame(animate);
+    }
+
+    // 全局暂停/恢复
+    globalPauseBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+            globalPauseBtn.className = 'resume';
+            globalPauseBtn.textContent = '恢复演示';
+        } else {
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    });
+
+    // 自动恢复演示函数（新增）
+    function autoResume() {
+        if (isPaused) {
+            isPaused = false;
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    }
+
+    animate();
+
+    // ========== 打开/关闭演示 ==========
+    singleBtn.addEventListener('click',function(){
+        if(singleBtn.classList.contains('active')){
+            singleBtn.classList.remove('active');
+            singleBtn.textContent='打开演示';
+            singleDemo.style.display='none';
+        }else{
+            autoResume(); // 切换时自动恢复
+            singleBtn.classList.add('active');
+            singleBtn.textContent='关闭演示';
+            hysteresisBtn.classList.remove('active');
+            hysteresisBtn.textContent='打开演示';
+            windowBtn.classList.remove('active');
+            windowBtn.textContent='打开演示';
+            
+            hysteresisDemo.style.display='none';
+            windowDemo.style.display='none';
+            singleDemo.style.display='flex';
+            scanX=0;
+        }
+    });
+
+    hysteresisBtn.addEventListener('click',function(){
+        if(hysteresisBtn.classList.contains('active')){
+            hysteresisBtn.classList.remove('active');
+            hysteresisBtn.textContent='打开演示';
+            hysteresisDemo.style.display='none';
+        }else{
+            autoResume(); // 切换时自动恢复
+            hysteresisBtn.classList.add('active');
+            hysteresisBtn.textContent='关闭演示';
+            singleBtn.classList.remove('active');
+            singleBtn.textContent='打开演示';
+            windowBtn.classList.remove('active');
+            windowBtn.textContent='打开演示';
+            
+            singleDemo.style.display='none';
+            windowDemo.style.display='none';
+            hysteresisDemo.style.display='flex';
+            scanX=0;
+            outputState=false;
+        }
+    });
+
+    windowBtn.addEventListener('click',function(){
+        if(windowBtn.classList.contains('active')){
+            windowBtn.classList.remove('active');
+            windowBtn.textContent='打开演示';
+            windowDemo.style.display='none';
+        }else{
+            autoResume(); // 切换时自动恢复
+            windowBtn.classList.add('active');
+            windowBtn.textContent='关闭演示';
+            singleBtn.classList.remove('active');
+            singleBtn.textContent='打开演示';
+            hysteresisBtn.classList.remove('active');
+            hysteresisBtn.textContent='打开演示';
+            
+            singleDemo.style.display='none';
+            hysteresisDemo.style.display='none';
+            windowDemo.style.display='flex';
+            scanX=0;
+        }
+    });
+</script>
+</body>
+</html>
