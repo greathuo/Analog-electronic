@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>非正弦信号发生电路</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+        }
+        #globalPauseBtn {
+            position: absolute;
+            right: 0;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        #globalPauseBtn.pause {
+            background-color: #444;
+        }
+        #globalPauseBtn.resume {
+            background-color: #28a745;
+        }
+        .desc {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        .switch-btn {
+            padding: 5px 10px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c7dfa;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .switch-btn.active {
+            background-color: #6c757d;
+        }
+        .demo-section {
+            margin-top: 0px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .circuit-img-rect {
+            max-width: 60%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+        }
+        .circuit-img-tri {
+            max-width: 100%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+        }
+        .slider-container {
+            width: 80%;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .slider-container label {
+            font-size: 13px;
+            white-space: nowrap;
+            width: 110px;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            cursor: pointer;
+        }
+        #sliderTip, #cTip, #rwTip, #triRTip, #triCTip, #triRwTip {
+            font-size: 13px;
+            color: #0066cc;
+            font-weight: bold;
+            min-width: 120px;
+        }
+        .wave-container {
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            margin: 10px 0;
+        }
+        .waveCanvas {
+            width: 105%;
+            aspect-ratio: 8/3;
+            background: initial;
+            border: none;
+        }
+        .wave-label {
+            position: absolute;
+            font-size: 14px;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-row">
+        <h1>非正弦信号发生电路</h1>
+        <button id="globalPauseBtn" class="pause">暂停演示</button>
+    </div>
+
+    <p class="desc">
+        <b>（1）矩形波发生电路：由开关电路、反馈网络、延迟环节组成。</b>
+        <button class="switch-btn active" id="rectBtn">关闭演示</button>
+    </p>
+    <div class="demo-section" id="rectDemo">
+        <img src="images/rect.png" class="circuit-img-rect" alt="矩形波电路">
+        <div class="slider-container">
+            <label>调节$R_\mathrm{f}$：</label>
+            <input type="range" id="rfSlider" min="50" max="300" value="150">
+            <span id="sliderTip"></span>
+        </div>
+        <div class="slider-container">
+            <label>调节$C$：</label>
+            <input type="range" id="cSlider" min="50" max="300" value="150">
+            <span id="cTip"></span>
+        </div>
+        <div class="slider-container">
+            <label>调节$R_\mathrm{w1}$/$R_\mathrm{w2}$：</label>
+            <input type="range" id="rwSlider" min="20" max="80" value="50">
+            <span id="rwTip"></span>
+        </div>
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="rectCanvas"></canvas>
+            <div class="wave-label" style="left:13%; top:0; color:red;">$u_\mathrm{o}$</div>
+            <div class="wave-label" style="left:18%; top:0; color:black;">/$u_\mathrm{C}$</div>
+            <div class="wave-label" style="right:10%; top:49%;">$t$</div>
+            <div class="wave-label" style="left:5%; top:49%;">$O$</div>
+            <div class="wave-label" style="left:0.5%; top:15%; font-size:12px;">$U_\mathrm{Z}$</div>
+            <div class="wave-label" style="left:0.5%; top:27%; font-size:12px;">$U_\mathrm{T}$</div>
+            <div class="wave-label" style="left:-3%; top:55%; font-size:12px;">$-U_\mathrm{T}$</div>
+            <div class="wave-label" style="left:-3%; top:70%; font-size:12px;">$-U_\mathrm{Z}$</div>
+        </div>
+    </div>
+
+    <p class="desc" style="margin-top:24px;">
+        <b>（2）三角波发生电路：利用积分运算电路将方波变为三角波。</b>
+        <button class="switch-btn" id="triBtn">打开演示</button>
+    </p>
+    <div class="demo-section" id="triDemo" style="display:none;">
+        <img src="images/Triangular.png" class="circuit-img-tri" alt="三角波电路">
+        <div class="slider-container">
+            <label>调节$R_1$：</label>
+            <input type="range" id="triR1Slider" min="50" max="300" value="150">
+            <span id="triRTip"></span>
+        </div>
+        <div class="slider-container">
+            <label>调节$C$：</label>
+            <input type="range" id="triCSlider" min="50" max="300" value="150">
+            <span id="triCTip"></span>
+        </div>
+        <div class="slider-container">
+            <label>调节$R_\mathrm{w1}$/$R_\mathrm{w2}$：</label>
+            <input type="range" id="triRwSlider" min="20" max="80" value="50">
+            <span id="triRwTip"></span>
+        </div>
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="triCanvas"></canvas>
+            <div class="wave-label" style="left:13%; top:0; color:red;">$u_\mathrm{o}$</div>
+            <div class="wave-label" style="left:18%; top:0; color:black;">/$u_\mathrm{o1}$</div>
+            <div class="wave-label" style="right:10%; top:49%;">$t$</div>
+            <div class="wave-label" style="left:5%; top:49%;">$O$</div>
+            <div class="wave-label" style="left:0.5%; top:17%; font-size:12px;">$U_\mathrm{Z}$</div>
+            <div class="wave-label" style="left:-3%; top:70%; font-size:12px;">$-U_\mathrm{Z}$</div>
+            <div class="wave-label" style="left:0.5%; top:30%; font-size:12px;">$U_\mathrm{T}$</div>
+            <div class="wave-label" style="left:-3%; top:56%; font-size:12px;">$-U_\mathrm{T}$</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const rectBtn = document.getElementById('rectBtn');
+    const triBtn = document.getElementById('triBtn');
+    const globalPauseBtn = document.getElementById('globalPauseBtn');
+
+    const rectDemo = document.getElementById('rectDemo');
+    const triDemo = document.getElementById('triDemo');
+
+    let isPaused = false;
+    let scanX = 0;
+    let drawX = 0;
+    let animationId = null;
+
+    // 波形整体向右偏移量（可自行调整大小）
+    const WAVE_OFFSET = 80;
+
+    // 矩形波参数
+    let Rf = 150, C = 150, lastRf = 150, lastC = 150;
+    let Rw1 = 50, Rw2 = 50, lastRw = 50;
+    const timeScale = 200;
+    const maxX = 700;
+
+    // 三角波参数
+    let triR1 = 150, triC = 150, lastTriR1 = 150, lastTriC = 150;
+    let triRw1 = 50, triRw2 = 50, lastTriRw = 50;
+
+    const rectCanvas = document.getElementById('rectCanvas');
+    const rectCtx = rectCanvas.getContext('2d');
+    const triCanvas = document.getElementById('triCanvas');
+    const triCtx = triCanvas.getContext('2d');
+    rectCanvas.width = 800; rectCanvas.height = 300;
+    triCanvas.width = 800; triCanvas.height = 300;
+
+    // 全局暂停
+    globalPauseBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+            globalPauseBtn.className = 'resume';
+            globalPauseBtn.textContent = '恢复演示';
+        } else {
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    });
+
+    function autoResume() {
+        if (isPaused) {
+            isPaused = false;
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    }
+
+    // ==================== 滑块 ====================
+    function initRfSlider() {
+        const s = document.getElementById('rfSlider');
+        const t = document.getElementById('sliderTip');
+        s.addEventListener('input', () => {
+            let v = parseInt(s.value);
+            t.textContent = v > lastRf ? "阻值增大" : v < lastRf ? "阻值减小" : "";
+            lastRf = v; Rf = v;
+        });
+        s.addEventListener('mouseup', () => t.textContent = "");
+    }
+    function initCSlider() {
+        const s = document.getElementById('cSlider');
+        const t = document.getElementById('cTip');
+        s.addEventListener('input', () => {
+            let v = parseInt(s.value);
+            t.textContent = v > lastC ? "容值增大" : v < lastC ? "容值减小" : "";
+            lastC = v; C = v;
+        });
+        s.addEventListener('mouseup', () => t.textContent = "");
+    }
+    function initRwSlider() {
+        const s = document.getElementById('rwSlider');
+        const t = document.getElementById('rwTip');
+        s.addEventListener('input', async () => {
+            let v = parseInt(s.value);
+            Rw1 = v; Rw2 = 100 - v;
+            t.innerHTML = v > lastRw ? '\\(R_{w1}\\)↑\\(R_{w2}\\)↓' : v < lastRw ? '\\(R_{w1}\\)↓\\(R_{w2}\\)↑' : '';
+            await MathJax.typesetPromise([t]);
+            lastRw = v;
+        });
+        s.addEventListener('mouseup', async () => { t.innerHTML = ''; await MathJax.typesetPromise([t]); });
+    }
+
+    function initTriR1Slider() {
+        const s = document.getElementById('triR1Slider');
+        const t = document.getElementById('triRTip');
+        s.addEventListener('input', () => {
+            let v = parseInt(s.value);
+            t.textContent = v > lastTriR1 ? "阻值增大" : v < lastTriR1 ? "阻值减小" : "";
+            lastTriR1 = v; triR1 = v;
+        });
+        s.addEventListener('mouseup', () => t.textContent = "");
+    }
+    function initTriCSlider() {
+        const s = document.getElementById('triCSlider');
+        const t = document.getElementById('triCTip');
+        s.addEventListener('input', () => {
+            let v = parseInt(s.value);
+            t.textContent = v > lastTriC ? "容值增大" : v < lastTriC ? "容值减小" : "";
+            lastTriC = v; triC = v;
+        });
+        s.addEventListener('mouseup', () => t.textContent = "");
+    }
+    function initTriRwSlider() {
+        const s = document.getElementById('triRwSlider');
+        const t = document.getElementById('triRwTip');
+        s.addEventListener('input', async () => {
+            let v = parseInt(s.value);
+            triRw1 = v; triRw2 = 100 - v;
+            t.innerHTML = v > lastTriRw ? '\\(R_{w1}\\)↑\\(R_{w2}\\)↓' : v < lastTriRw ? '\\(R_{w1}\\)↓\\(R_{w2}\\)↑' : '';
+            await MathJax.typesetPromise([t]);
+            lastTriRw = v;
+        });
+        s.addEventListener('mouseup', async () => { t.innerHTML = ''; await MathJax.typesetPromise([t]); });
+    }
+
+    // ==================== 矩形波 ====================
+    function drawRectWave() {
+        const ctx = rectCtx;
+        const w = 800, h = 300;
+        const cx = 80, cy = 150;
+        const UZ = 80;
+        const UT = 40;
+
+        ctx.clearRect(0,0,w,h);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#000';
+        
+        // 横轴 + 箭头
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w - 100, cy);
+        ctx.moveTo(w - 100, cy);
+        ctx.lineTo(w - 120, cy - 10);
+        ctx.moveTo(w - 100, cy);
+        ctx.lineTo(w - 120, cy + 10);
+        ctx.stroke();
+
+        // 纵轴 + 箭头
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx - 10, 20);
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx + 10, 20);
+        ctx.stroke();
+
+        // 阈值虚线
+        ctx.setLineDash([2,2]);
+        ctx.beginPath();
+        ctx.moveTo(50,cy-UZ); ctx.lineTo(w-100,cy-UZ);
+        ctx.moveTo(50,cy+UZ); ctx.lineTo(w-100,cy+UZ);
+        ctx.moveTo(50,cy-UT); ctx.lineTo(w-100,cy-UT);
+        ctx.moveTo(50,cy+UT); ctx.lineTo(w-100,cy+UT);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const D = Rw1 / (Rw1 + Rw2);
+        const baseCycle = (Rf * C) / (150 * 150);
+
+        // 输出矩形波 + 偏移
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#f00';
+        ctx.beginPath();
+        for(let x=0;x<=drawX;x++){
+            const phase = (x / timeScale / baseCycle) % 1;
+            const y = phase < D ? cy - UZ : cy + UZ;
+            const drawXPos = x + WAVE_OFFSET;
+            drawXPos===0 ? ctx.moveTo(drawXPos,y) : ctx.lineTo(drawXPos,y);
+        }
+        ctx.stroke();
+
+        // 电容电压 uC + 偏移
+        ctx.strokeStyle = '#000';
+        ctx.setLineDash([5,3]);
+        ctx.beginPath();
+        for(let x=0;x<=drawX;x++){
+            const phase = (x / timeScale / baseCycle) % 1;
+            let y;
+            if (phase < D) {
+                const k = phase / D;
+                y = cy + UT + (cy - UT - (cy + UT)) * (1 - Math.exp(-k * 3));
+            } else {
+                const k = (phase - D) / (1 - D);
+                y = cy - UT + (cy + UT - (cy - UT)) * (1 - Math.exp(-k * 3));
+            }
+            const drawXPos = x + WAVE_OFFSET;
+            drawXPos===0 ? ctx.moveTo(drawXPos,y) : ctx.lineTo(drawXPos,y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // ==================== 三角波 ====================
+    function drawTriWave() {
+        const ctx = triCtx;
+        const w=800,h=300,cx=80,cy=150,UZ=80,UT=40;
+        ctx.clearRect(0,0,w,h);
+        ctx.lineWidth=3; ctx.strokeStyle='#000';
+        
+        // 横轴 + 箭头
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w - 100, cy);
+        ctx.moveTo(w - 100, cy);
+        ctx.lineTo(w - 120, cy - 10);
+        ctx.moveTo(w - 100, cy);
+        ctx.lineTo(w - 120, cy + 10);
+        ctx.stroke();
+
+        // 纵轴 + 箭头
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx - 10, 20);
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx + 10, 20);
+        ctx.stroke();
+
+        ctx.setLineDash([2,2]);
+        ctx.beginPath();
+        ctx.moveTo(50,cy-UZ); ctx.lineTo(w-100,cy-UZ);
+        ctx.moveTo(50,cy+UZ); ctx.lineTo(w-100,cy+UZ);
+        ctx.moveTo(50,cy-UT); ctx.lineTo(w-100,cy-UT);
+        ctx.moveTo(50,cy+UT); ctx.lineTo(w-100,cy+UT);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const ratio = triRw1 / (triRw1 + triRw2);
+        const speed = 160 * (triR1*triC) / (150*150);
+
+        // 方波 + 偏移
+        ctx.lineWidth=4; ctx.strokeStyle='#000'; ctx.setLineDash([5,3]);
+        ctx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            const t = (x/speed)%1;
+            const y = t < ratio ? cy+UZ : cy-UZ;
+            const drawXPos = x + WAVE_OFFSET;
+            drawXPos===0?ctx.moveTo(drawXPos,y):ctx.lineTo(drawXPos,y);
+        }
+        ctx.stroke(); ctx.setLineDash([]);
+
+        // 三角波 + 偏移
+        ctx.strokeStyle='#f00';
+        ctx.beginPath();
+        for(let x=0;x<=scanX;x++){
+            const t = (x/speed)%1;
+            let v;
+            if(t<ratio){
+                v = UT - 2*UT*(t/ratio);
+            }else{
+                v = -UT + 2*UT*((t-ratio)/(1-ratio));
+            }
+            const y = cy + v;
+            const drawXPos = x + WAVE_OFFSET;
+            drawXPos===0?ctx.moveTo(drawXPos,y):ctx.lineTo(drawXPos,y);
+        }
+        ctx.stroke();
+    }
+
+    // ==================== 动画 ====================
+    function animate() {
+        if(!isPaused){
+            drawX += 2;
+            scanX += 2;
+            if(drawX>maxX) drawX=0;
+            if(scanX>700) scanX=0;
+        }
+        if(rectDemo.style.display!='none') drawRectWave();
+        if(triDemo.style.display!='none') drawTriWave();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // ==================== 切换 ====================
+    rectBtn.addEventListener('click',function(){
+        if(rectBtn.classList.contains('active')){
+            rectBtn.classList.remove('active');
+            rectBtn.textContent='打开演示';
+            rectDemo.style.display='none';
+        }else{
+            autoResume();
+            rectBtn.classList.add('active');
+            rectBtn.textContent='关闭演示';
+            triBtn.classList.remove('active');
+            triBtn.textContent='打开演示';
+            triDemo.style.display='none';
+            rectDemo.style.display='flex';
+            drawX = 0; scanX = 0;
+        }
+    });
+
+    triBtn.addEventListener('click',function(){
+        if(triBtn.classList.contains('active')){
+            triBtn.classList.remove('active');
+            triBtn.textContent='打开演示';
+            triDemo.style.display='none';
+        }else{
+            autoResume();
+            triBtn.classList.add('active');
+            triBtn.textContent='关闭演示';
+            rectBtn.classList.remove('active');
+            rectBtn.textContent='打开演示';
+            rectDemo.style.display='none';
+            triDemo.style.display='flex';
+            drawX = 0; scanX = 0;
+        }
+    });
+
+    // 启动
+    initRfSlider();
+    initCSlider();
+    initRwSlider();
+    initTriR1Slider();
+    initTriCSlider();
+    initTriRwSlider();
+    animate();
+</script>
+</body>
+</html>
