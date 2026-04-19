@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>压控振荡器</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            padding: 30px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .title-row {
+            position: relative;
+            width: 100%;
+            height: 26px;
+            line-height: 26px;
+            margin-bottom: 6px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+        }
+        #pauseBtn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            padding: 4px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        #pauseBtn.running {
+            background: #28a745;
+        }
+        #pauseBtn.paused {
+            background: #444;
+        }
+        .description {
+            text-indent: 2em;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        .descriptioneq {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 0px;
+            text-align: justify;
+        }
+        .circuit-img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .waveform-container {
+            margin-top: 15px;
+            position: relative;
+            width: 100%;
+            max-width: 700;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .waveform-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .slider-container {
+            margin: 15px auto;
+            max-width: 500px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .slider-container label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 85%;
+            margin: 10px 0;
+        }
+
+        .math-label {
+            position: absolute;
+            font-size: 13px;
+            transform: translate(-50%, -50%);
+        }
+        .label-uO1 { left: 12%; top: 5%; }
+        .label-uO  { left: 11.5%; top: 45%; }
+        .label-t1  { left: 92%; top: 30%; }
+        .label-t2  { left: 92%; top: 70%; }
+
+        .dash-label {
+            position: absolute;
+            font-size: 13px;
+            transform: translateY(-50%);
+        }
+        .dash-ut { top: 10%; left: 3%;}
+        .dash-utn { top: 38%; left: 0%;}
+        .dash-uz { top: 53%; left: 3%;}
+        .dash-uzn { top: 78%; left: 0%;}
+    </style>
+</head>
+<body>
+    <div class="title-row">
+        <h1>压控振荡器</h1>
+        <button id="pauseBtn" class="running">暂停演示</button>
+    </div>
+
+    <div class="description">
+        根据输入电压的变化来调整输出频率的电子振荡器。图示电路为电荷平衡式压控振荡器，由积分运算电路和迟滞比较器组成。
+    </div>
+
+    <img src="images/circuit.png" class="circuit-img">
+
+    <div class="slider-container">
+        <label>输入电压$u_\mathrm{i}$ ($u_\mathrm{i} < 0$)<span id="freqTip" style="margin-left:8px;"></span></label>
+        <input type="range" id="uiSlider" min="-5" max="-2" step="0.001" value="-3.5">
+    </div>
+
+    <div class="waveform-container">
+        <div class="math-label label-uO1">$u_{\mathrm{o1}}$</div>
+        <div class="math-label label-uO">$u_{\mathrm{o}}$</div>
+        <div class="math-label label-t1">$t$</div>
+        <div class="math-label label-t2">$t$</div>
+
+        <div class="dash-label dash-ut">$U_\mathrm{T}$</div>
+        <div class="dash-label dash-utn">$-U_\mathrm{T}$</div>
+        <div class="dash-label dash-uz">$U_\mathrm{Z}$</div>
+        <div class="dash-label dash-uzn">$-U_\mathrm{Z}$</div>
+
+        <svg class="waveform-svg" width="700" height="500" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow-up" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0 0 L0 10 L10 5 Z" fill="#000"/>
+                </marker>
+                <marker id="arrow-right" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0 0 L10 5 L0 10 Z" fill="#000"/>
+                </marker>
+            </defs>
+
+            <line x1="60" y1="200" x2="60" y2="30" stroke="#000" stroke-width="3" marker-end="url(#arrow-up)"/>
+            <line x1="60" y1="125" x2="650" y2="125" stroke="#000" stroke-width="3" marker-end="url(#arrow-right)"/>
+
+            <line x1="60" y1="400" x2="60" y2="230" stroke="#000" stroke-width="3" marker-end="url(#arrow-up)"/>
+            <line x1="60" y1="325" x2="650" y2="325" stroke="#000" stroke-width="3" marker-end="url(#arrow-right)"/>
+
+            <line x1="60" y1="50" x2="650" y2="50" stroke="#888" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <line x1="60" y1="190" x2="650" y2="190" stroke="#888" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <line x1="60" y1="260" x2="650" y2="260" stroke="#888" stroke-width="1.5" stroke-dasharray="4 2"/>
+            <line x1="60" y1="390" x2="650" y2="390" stroke="#888" stroke-width="1.5" stroke-dasharray="4 2"/>
+
+            <g id="verticalDashes"></g>
+
+            <line id="leftPeriodLine" x1="60" y1="420" x2="100" y2="420" stroke="#000" stroke-width="1.5"/>
+            <polygon id="left-arrow-start" points="60,420 70,415 70,425" fill="#000"/>
+            <polygon id="left-arrow-end"   points="100,420 90,415 90,425" fill="#000"/>
+            
+            <line id="periodLine" x1="100" y1="420" x2="257" y2="420" stroke="#000" stroke-width="1.5"/>
+            <polygon id="p1-left" points="100,420 110,415 110,425" fill="#000"/>
+            <polygon id="p1-right" points="257,420 247,415 247,425" fill="#000"/>
+
+            <g id="tLabels">
+                <foreignObject x="0" y="397" width="50" height="20">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="text-align:center;font-size:18px">$T_1$</div>
+                </foreignObject>
+                <foreignObject x="0" y="397" width="50" height="20">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="text-align:center;font-size:18px">$T_2$</div>
+                </foreignObject>
+            </g>
+
+            <polyline id="wave1" fill="none" stroke="#000" stroke-width="5"/>
+            <polyline id="wave2" fill="none" stroke="red" stroke-width="5"/>
+        </svg>
+    </div>
+    <div class="descriptioneq">
+        <div>$T_1=\frac{2R_2R_5C}{R_3}$，$T_2=\frac{2R_2R_1C}{R_3}\cdot\frac{U_z}{\left|u_i\right|}$</div>
+        <div>振荡信号周期：$T=T_1+T_2\approx\frac{2R_2R_1C}{R_3}\cdot\frac{U_z}{\left|u_i\right|}$</div>
+        <div>输出信号频率：$f=\frac{1}{T}=\frac{R_3}{2R_2R_1C}\cdot\frac{\left|u_i\right|}{U_z}$</div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('uiSlider');
+        const freqTip = document.getElementById('freqTip');
+        const wave1 = document.getElementById('wave1');
+        const wave2 = document.getElementById('wave2');
+        const verticalDashes = document.getElementById('verticalDashes');
+        const periodLine = document.getElementById('periodLine');
+        const leftPeriodLine = document.getElementById('leftPeriodLine');
+        const pLeft = document.getElementById('p1-left');
+        const pRight = document.getElementById('p1-right');
+        const leftArrowEnd = document.getElementById('left-arrow-end');
+        const tLabels = document.querySelectorAll('#tLabels foreignObject');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        const X_START = 60;
+        const X_END = 650;
+        const FULL_WIDTH = X_END - X_START;
+        const MAX_REL_X = 590;
+
+        const flipPoints = [40, 197, 393, 590];
+        const baseRel = [0,40,197,240,393,433,590];
+        const baseRel2 = [0,40,40,197,197,240,240,393,393,433,433,590];
+        const y1 = [50,190,50,190,50,190,50];
+        const y2 = [260,260,390,390,260,260,390,390,260,260,390,390];
+
+        function generateSmoothPoints(relX, relY) {
+            const points = [];
+            for (let i=0;i<relX.length-1;i++) {
+                const x0=relX[i],x1=relX[i+1];
+                const y0=relY[i],y1=relY[i+1];
+                for(let t=0;t<=1;t+=0.002){
+                    const x=x0+(x1-x0)*t;
+                    const y=y0+(y1-y0)*t;
+                    points.push({x,y});
+                }
+            }
+            return points;
+        }
+
+        let progress = 0, lastTime = 0, scale = 1;
+        let isPaused = false;
+        let animationId = null;
+        let pts1 = generateSmoothPoints(baseRel, y1);
+        let pts2 = generateSmoothPoints(baseRel2, y2);
+
+        function calcX(rel) { return X_START + rel * scale; }
+
+        function updateVerticalDashesFull() {
+            verticalDashes.innerHTML = '';
+            flipPoints.forEach(rel => {
+                const x = calcX(rel);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('x2', x);
+                line.setAttribute('y1', 50);
+                line.setAttribute('y2', 440);
+                line.setAttribute('stroke', '#aaa');
+                line.setAttribute('stroke-width', '1.5');
+                line.setAttribute('stroke-dasharray', '4 2');
+                verticalDashes.appendChild(line);
+            });
+        }
+
+        // 正常动画：画到当前进度
+        function drawWaveAtProgress() {
+            const currentMaxX = X_START + FULL_WIDTH * progress;
+
+            const d1 = [];
+            for (const p of pts1) {
+                const x = calcX(p.x);
+                if (x > currentMaxX) break;
+                d1.push(`${x},${p.y}`);
+            }
+            wave1.setAttribute('points', d1.join(' '));
+
+            const d2 = [];
+            for (const p of pts2) {
+                const x = calcX(p.x);
+                if (x > currentMaxX) break;
+                d2.push(`${x},${p.y}`);
+            }
+            wave2.setAttribute('points', d2.join(' '));
+
+            updateVerticalDashes(currentMaxX);
+        }
+
+        // 暂停时专用：画完整波形
+        function drawFullWave() {
+            const d1 = [];
+            for (const p of pts1) {
+                const x = calcX(p.x);
+                d1.push(`${x},${p.y}`);
+            }
+            wave1.setAttribute('points', d1.join(' '));
+
+            const d2 = [];
+            for (const p of pts2) {
+                const x = calcX(p.x);
+                d2.push(`${x},${p.y}`);
+            }
+            wave2.setAttribute('points', d2.join(' '));
+
+            updateVerticalDashesFull();
+        }
+
+        function updateVerticalDashes(currentMaxX) {
+            verticalDashes.innerHTML = '';
+            flipPoints.forEach(rel => {
+                const x = calcX(rel);
+                if (x <= currentMaxX + 1) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x);
+                    line.setAttribute('x2', x);
+                    line.setAttribute('y1', 50);
+                    line.setAttribute('y2', 440);
+                    line.setAttribute('stroke', '#aaa');
+                    line.setAttribute('stroke-width', '1.5');
+                    line.setAttribute('stroke-dasharray', '4 2');
+                    verticalDashes.appendChild(line);
+                }
+            });
+        }
+
+        function updateWave(t) {
+            if (isPaused) return;
+
+            if (!lastTime) lastTime = t;
+            const dt = (t - lastTime) / 1000;
+            lastTime = t;
+            progress += dt * 1.2;
+            progress %= 1;
+
+            drawWaveAtProgress();
+            animationId = requestAnimationFrame(updateWave);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                cancelAnimationFrame(animationId);
+                pauseBtn.textContent = "恢复演示";
+                pauseBtn.className = "paused";
+                // 暂停后立刻显示完整波形
+                drawFullWave();
+            } else {
+                lastTime = 0;
+                animationId = requestAnimationFrame(updateWave);
+                pauseBtn.textContent = "暂停演示";
+                pauseBtn.className = "running";
+            }
+        }
+
+        pauseBtn.addEventListener('click', togglePause);
+
+        function updateLabelPositions(lineStart, lineEnd) {
+            tLabels[0].setAttribute('x', (60 + lineStart) / 2 - 25);
+            tLabels[1].setAttribute('x', (lineStart + lineEnd) / 2 - 25);
+        }
+
+        slider.addEventListener('input', async () => {
+            const val = parseFloat(slider.value);
+            const absU = Math.abs(val);
+
+            freqTip.innerHTML = val < -3.5
+                ? "：$|u_i|$ 增大，输出频率升高"
+                : "：$|u_i|$ 减小，输出频率降低";
+            await MathJax.typesetPromise();
+
+            scale = FULL_WIDTH / (MAX_REL_X * (absU / 5));
+            const lineStart = calcX(40);
+            const lineEnd = calcX(197);
+
+            leftPeriodLine.setAttribute('x2', lineStart);
+            leftArrowEnd.setAttribute('points', `${lineStart},420 ${lineStart-10},415 ${lineStart-10},425`);
+            periodLine.setAttribute('x1', lineStart);
+            periodLine.setAttribute('x2', lineEnd);
+
+            pLeft.setAttribute('points', `${lineStart},420 ${lineStart+10},415 ${lineStart+10},425`);
+            pRight.setAttribute('points', `${lineEnd},420 ${lineEnd-10},415 ${lineEnd-10},425`);
+
+            updateLabelPositions(lineStart, lineEnd);
+
+            // 暂停时拖动滑块 → 直接显示整条完整波形
+            if (isPaused) {
+                drawFullWave();
+            }
+        });
+
+        window.addEventListener('load', () => {
+            animationId = requestAnimationFrame(updateWave);
+
+            const initialStart = calcX(40);
+            const initialEnd = calcX(197);
+            updateLabelPositions(initialStart, initialEnd);
+
+            setTimeout(() => {
+                MathJax.typeset();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
