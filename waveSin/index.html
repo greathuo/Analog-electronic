@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桥式RC正弦波振荡电路</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax/es5/tex-mml-chtml.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #ffffff;
+            padding: 30px;
+            font-family: "Microsoft YaHei", sans-serif;
+            line-height: 1.8;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .desc-img-wrap {
+            max-width: 900px;
+            margin: 0 auto 30px;
+        }
+        .desc-img-wrap .circuit-img {
+            float: right;
+            margin-left: 10px;
+            max-width: 55%;
+            height: auto;
+            border-radius: 6px;
+        }
+        .desc-img-wrap .description {
+            text-indent: 2em;
+            font-size: 16px;
+            color: #333;
+            text-align: justify;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #34495e;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 2px;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .control-group {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            width: 80%;
+            margin: 0px 0 10px 0;
+        }
+        .value {
+            display: inline-block;
+            min-width: 70px;
+            text-align: left;
+            color: #000;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0px;
+            font-size: 14px;
+        }
+        .row .left {
+            flex: 0 0 180px;
+        }
+        .row .right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+            border-radius: 6px;
+        }
+
+        .btn {
+            padding: 6px 8px;
+            border: none;
+            border-radius: 6px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            margin-right: 6px;
+            height: 34px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .status {
+            padding: 6px 12px;
+            height: 34px;
+            line-height: 20px;     /* 文字垂直居中 */
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            margin: 0;
+        }
+        .status.stop { background: #e74c3c; color: white; }
+        .status.start { background: #f39c12; color: white; }
+        .status.steady { background: #27ae60; color: white; }
+        .status.distort { background: #e67e22; color: white; }
+        canvas {
+            width: 100%;
+            height: 200px;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">桥式\( RC \)正弦波振荡电路</h1>
+    <div class="desc-img-wrap">
+        <img src="images/circuit.png" class="circuit-img">
+        <div class="description">
+            由运算放大器、非线性电阻\( R_\mathrm{f}(t) \)、电阻\( R_1 \)构成同相比例放大电路，非线性电阻\( R_\mathrm{f}(t) \)用于稳定振幅；
+            \( RC \)串联和\( RC \)并联构成选频网络，同时也是正反馈网络。
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+    <div class="container">
+        <div class="grid">
+            <div class="panel">
+                <div class="row">
+                    <div class="left">
+                        <h3>参数调节</h3>
+                        <label>电阻 \(R (\mathrm{kΩ})\)：<span class="value" id="rVal">$10$</span></label>
+                        <input type="range" id="rSlider" min="1" max="50" value="10" step="1">
+                        
+                        <label>电容 \(C (\mathrm{nF})\)：<span class="value" id="cVal">$10$</span></label>
+                        <input type="range" id="cSlider" min="1" max="100" value="10" step="1">
+                        
+                        <label>增益 \(1+\frac{R_\mathrm{f}}{R_1}\)：<span class="value" id="gainVal">$3.0$</span></label>
+                        <input type="range" id="gainSlider" min="2.0" max="5.0" value="3.0" step="0.1">
+                    </div>
+
+                    <div class="right">
+                        <h3>振荡频率</h3>
+                        <div>\(f_0 = \dfrac{1}{2\pi RC}\)</div>
+                        <div style="padding-left:38px;" id="freqDisplay">\(= 1591.55 \ \mathrm{Hz}\)</div>
+                    </div>
+                </div>
+
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+    <button class="btn" id="startBtn">开始仿真</button>
+    <button class="btn" id="stopBtn">停止仿真</button>
+    <div class="status" id="status" style="margin: 0;">未运行</div>
+</div>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>输出波形 \(u_\mathrm{o}\)</h3>
+            <canvas id="waveCanvas"></canvas>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('waveCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = canvas.offsetWidth;
+canvas.height = 300;
+
+let R = 10e3;
+let C = 10e-9;
+let gain = 3.0;
+let running = false;
+let t = 0;
+let amplitude = 0;
+let maxAmp = 5;
+let statusEl = document.getElementById('status');
+
+function updateParams() {
+    R = document.getElementById('rSlider').value * 1e3;
+    C = document.getElementById('cSlider').value * 1e-9;
+    gain = parseFloat(document.getElementById('gainSlider').value);
+
+    document.getElementById('rVal').innerHTML = `$${(R/1e3).toFixed(0)}$`;
+    document.getElementById('cVal').innerHTML = `$${(C*1e9).toFixed(0)}$`;
+    document.getElementById('gainVal').innerHTML = `$${gain.toFixed(1)}$`;
+
+    const f0 = 1 / (2 * Math.PI * R * C);
+    document.getElementById('freqDisplay').innerHTML = `$= ${f0.toFixed(2)} \\ \\mathrm{Hz}$`;
+    MathJax.typesetPromise();
+}
+
+function drawWave() {
+    if (!running) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const w = canvas.width, h = canvas.height;
+    const cy = h / 2;
+    const f0 = 1 / (2 * Math.PI * R * C);
+    const omega = 2 * Math.PI * f0;
+
+    // 时间步进加快，让频率变化肉眼可见
+    const step = 0.0001; 
+
+    // 水平中线
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(w, cy);
+    ctx.stroke();
+
+    // 完全保留你原来的绘制方式
+    ctx.strokeStyle = '#2980b9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+        // 核心修改：放大频率系数，拖动时波形疏密剧烈变化
+        const tt = t + x/(w-1) * 10/f0;
+        let v = amplitude * Math.sin(omega * tt);
+
+        if (gain > 3.2) {
+            v = Math.min(maxAmp, Math.max(-maxAmp, v * 1.05));
+        }
+
+        const y = cy - v / maxAmp * (cy - 20);
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // 状态逻辑不变
+    if (gain < 3.0) {
+        amplitude *= 0.98;
+        setStatus('stop', '不起振（增益<3）');
+    } else if (gain > 3.0 && amplitude < maxAmp) {
+        amplitude *= 1.02;
+        setStatus('start', '起振中');
+    } else if (gain >= 3.0 && amplitude >= maxAmp) {
+        amplitude = maxAmp;
+        if (gain > 3.2)
+            setStatus('distort', '稳定（失真）');
+        else
+            setStatus('steady', '稳定（正弦波）');
+    }
+
+    t += step;
+    requestAnimationFrame(drawWave);
+}
+
+function setStatus(cls, text) {
+    statusEl.className = 'status ' + cls;
+    statusEl.textContent = text;
+}
+
+document.getElementById('rSlider').addEventListener('input', updateParams);
+document.getElementById('cSlider').addEventListener('input', updateParams);
+document.getElementById('gainSlider').addEventListener('input', updateParams);
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    running = true;
+    amplitude = 0.1;
+    t = 0;
+    drawWave();
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+    running = false;
+    setStatus('stop', '未运行');
+});
+
+updateParams();
+</script>
+</body>
+</html>
