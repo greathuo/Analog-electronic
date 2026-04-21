@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CE-CB与CE放大电路幅频响应特性</title>
+
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$']] }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f4f6f8;
+            font-family: "Microsoft YaHei", sans-serif;
+            padding: 15px 10px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #222;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        .left-text {
+            text-indent: 2em;
+            flex: 1;
+            min-width: 0;
+            font-size: 16px;
+            text-align: justify;
+            color: #222;
+        }
+
+        .right-img {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+        }
+
+        .right-img img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .panel {
+            flex: 1;
+            min-width: 280px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 18px;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .row .left {
+            flex: 0 0 42%;
+        }
+
+        .row .right {
+            flex: 0 0 58%;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 320px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        /* 👇 真正能渲染 LaTeX 的 X 轴标题 */
+        .chart-x-label {
+            position: absolute;
+            left: 50%;
+            bottom: -20px;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .param-item {
+            margin-bottom: 16px;
+        }
+
+        .param-item label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .param-item input {
+            width: 90%;
+            accent-color: #4263eb;
+        }
+
+        .param-item .val {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .result {
+            background: #edf2ff;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result strong {
+            color: #222;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>CE-CB与CE放大电路幅频响应特性</h1>
+    <div class="content">
+        <div class="left-text">共基电路的低输入电阻作为共射电路的负载电阻，可大幅降低共射电路增益，减小密勒倍增效应，提高上限截频$\omega_\mathrm{H1}$。</div>
+        <div class="right-img"><img src="images/circuit.png" alt="电路图"></div>
+    </div>
+
+    <div class="main">
+        <div class="panel">
+            <div class="row">
+                <div class="left">
+                    <div class="param-item">
+                        <label>跨导 $g_\mathrm{m}$</label>
+                        <input type="range" id="gm" min="2" max="30" value="10" step="1" oninput="calc()">
+                        <div class="val">当前值：<span id="gmv">$10$</span> $\mathrm{mS}$</div>
+                    </div>
+                    <div class="param-item">
+                        <label>等效负载电阻 $R_\mathrm{L}^\prime$</label>
+                        <input type="range" id="rl" min="1" max="15" value="5" step="0.5" oninput="calc()">
+                        <div class="val">当前值：<span id="rlv">$5$</span> $\mathrm{k}\Omega$</div>
+                    </div>
+                </div>
+                <div class="right">
+                    <div class="result">
+                        <strong>分析结果对比</strong><br>
+                        基本共射增益：<span id="av_ce">—</span> $\mathrm{dB}$<br>
+                        基本共射 $f_\mathrm{H}$：<span id="fh_ce">—</span> $\mathrm{MHz}$<br>
+                        共射-共基增益：<span id="av_cecb">—</span> $\mathrm{dB}$<br>
+                        共射-共基 $f_\mathrm{H}$：<span id="fh_cecb">—</span> $\mathrm{MHz}$
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="freqChart"></canvas>
+                <!-- 👇 这里是真正能渲染 LaTeX 的 X 轴标题 -->
+                <div class="chart-x-label">频率 $f (\mathrm{MHz})$</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chart;
+    window.addEventListener('load', () => {
+        const ctx = document.getElementById('freqChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: '基本共射',
+                        borderColor: '#ff0000',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false
+                    },
+                    {
+                        label: '共射-共基',
+                        borderColor: '#0000ff',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'line'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'logarithmic',
+                        min: 0.1,
+                        max: 1000,
+                        // 关闭自带标题，改用 HTML LaTeX 标题
+                        title: { display: false },
+                        ticks: {
+                            autoSkip: false,
+                            callback: val => [0.1, 1, 10, 100, 1000].includes(+val) ? val : ''
+                        },
+                        grid: {
+                            color: c => [0.1, 1, 10, 100, 1000].includes(c.tick.value) ? '#666' : '#eee',
+                            lineWidth: c => [0.1, 1, 10, 100, 1000].includes(c.tick.value) ? 1.5 : 1,
+                            borderDash: c => [0.1, 1, 10, 100, 1000].includes(c.tick.value) ? [] : [3, 3]
+                        },
+                        minor: { grid: { display: false } }
+                    },
+                    y: {
+                        title: { display: true, text: '增益 / dB' },
+                        grid: { color: '#eee' }
+                    }
+                }
+            }
+        });
+        calc();
+    });
+
+    function calc() {
+        document.getElementById('gmv').innerText = document.getElementById('gm').value;
+        document.getElementById('rlv').innerText = document.getElementById('rl').value;
+
+        const gm = +document.getElementById('gm').value * 1e-3;
+        const rl = +document.getElementById('rl').value * 1e3;
+        const Rp = 1000;
+        const Cpi = 15e-12;
+        const Cmu = 1.5e-12;
+        const Av = -gm * rl;
+
+        const fh_ce = 1 / (2 * Math.PI * Rp * (Cpi + Cmu * Math.abs(Av)));
+        const fh_cecb = 1 / (2 * Math.PI * Rp * Cpi);
+
+        const fs = [], d1 = [], d2 = [];
+        for (let f = 0.1; f <= 1000; f *= 1.2) {
+            fs.push(f);
+            const w = 2 * Math.PI * f * 1e6;
+            d1.push(20 * Math.log10(Math.abs(Av) / Math.hypot(1, w / fh_ce)));
+            d2.push(20 * Math.log10(Math.abs(Av) / Math.hypot(1, w / fh_cecb)));
+        }
+
+        chart.data.labels = fs;
+        chart.data.datasets[0].data = d1;
+        chart.data.datasets[1].data = d2;
+        chart.update();
+
+        document.getElementById('av_ce').innerText = (20 * Math.log10(Math.abs(Av))).toFixed(1);
+        document.getElementById('av_cecb').innerText = (20 * Math.log10(Math.abs(Av))).toFixed(1);
+        document.getElementById('fh_ce').innerText = (fh_ce / 1e6).toFixed(2);
+        document.getElementById('fh_cecb').innerText = (fh_cecb / 1e6).toFixed(2);
+    }
+</script>
+</body>
+</html>
