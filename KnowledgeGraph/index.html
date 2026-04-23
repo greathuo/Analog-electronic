@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>电子技术基本教程新概念（模拟部分）知识图谱</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: #f0f0f0;
+            width: 100vw;
+            height: 100vh;
+        }
+        #title {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        .control-panel {
+            position: fixed;
+            top: 55px;
+            left: 10px;
+            z-index: 99;
+            background: white;
+            padding: 8px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .control-panel button {
+            margin: 3px;
+            padding: 6px 8px;
+            border: none;
+            border-radius: 4px;
+            background: #4285F4;
+            color: white;
+            font-size: 13px;
+        }
+        .control-panel button.active {
+            background: #1E50B7;
+            font-weight: bold;
+        }
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 10px;
+            z-index: 99;
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .zoom-controls button {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+            margin: 3px 0;
+            border-radius: 50%;
+            border: none;
+            background: #4285F4;
+            color: white;
+        }
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #graph-svg-container {
+            width: 100%;
+            height: 100%;
+        }
+        .node circle {
+            stroke: #333;
+            stroke-width: 1.5px;
+            transition: all 0.3s ease;
+        }
+        .level-1 { fill: #4285F4; }
+        .level-2 { fill: #a2d2bb; }
+        .level-3 { fill: #FFF400; }
+        .level-4 { fill: #ca7d76; }
+
+        /* 节点文字：水平居中 + 多行垂直居中 */
+        .node text {
+            text-anchor: middle;
+            fill: #000;
+            font-size: 18px;
+            font-weight: none;
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke: #777;
+            stroke-width: 1px;
+            stroke-opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+        .link-text {
+            font-size: 13px;
+            fill: #555;
+        }
+        .tooltip {
+            position: fixed;
+            padding: 6px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .fade { opacity: 0.15 !important; }
+        .active-node circle { stroke: #000; stroke-width: 3px; }
+        .active-link { stroke: #222; stroke-width: 2px; stroke-opacity: 1 !important; }
+    </style>
+</head>
+<body>
+    <h1 id="title">电子技术基本教程新概念（模拟部分）知识图谱</h1>
+    <div class="control-panel">
+        <div><strong>显示层级</strong></div>
+        <button id="show1" onclick="showLevel(1)">1级</button>
+        <button id="show2" onclick="showLevel(2)">1-2级</button>
+        <button id="show3" onclick="showLevel(3)">1-3级</button>
+        <button id="show4" onclick="showLevel(4)" class="active">全部</button>
+    </div>
+    <div class="zoom-controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">−</button>
+        <button onclick="resetZoom()">⟳</button>
+    </div>
+    <div id="graph-container">
+        <div id="graph-svg-container"></div>
+    </div>
+    <div class="tooltip"></div>
+
+    <script>
+        let container, width, height;
+        let svg, g;
+        let link, linkText, node;
+        let simulation;
+        let tooltip;
+        let currentMaxLevel = 4;
+        let graphData;
+        let selectedNode = null;
+        let neighborIds = new Set();
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+
+        window.onload = async function () {
+            try {
+                const response = await fetch("data.json");
+                graphData = await response.json();
+                init();
+            } catch (err) {
+                alert("加载 data.json 失败，请确保文件在同一文件夹");
+            }
+        };
+
+        // ===== 关键：文字自动换行分割 =====
+        function wrapText(str, rowLen = 3) {
+            if(!str) return [str];
+            let arr = [];
+            for(let i = 0; i < str.length; i += rowLen){
+                arr.push(str.slice(i, i + rowLen));
+            }
+            return arr;
+        }
+
+        function init() {
+            container = d3.select("#graph-svg-container");
+            width = window.innerWidth;
+            height = window.innerHeight;
+            svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .call(zoom);
+            g = svg.append("g");
+            tooltip = d3.select(".tooltip");
+
+            const nodeMap = new Map(graphData.nodes.map(d => [d.id, d]));
+            graphData.links.forEach(link => {
+                link.source = nodeMap.get(link.source);
+                link.target = nodeMap.get(link.target);
+            });
+
+            svg.on("click", e => e.target.tagName === "svg" && clearHighlight());
+            drawGraph();
+
+            // 👉 自动适配：初始完整展示整张知识图谱
+            setTimeout(() => {
+            // 获取所有节点位置
+            const nodes = graphData.nodes;
+            if(!nodes.length) return;
+
+            // 计算整张图谱边界
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            nodes.forEach(d => {
+                minX = Math.min(minX, d.x);
+                maxX = Math.max(maxX, d.x);
+                minY = Math.min(minY, d.y);
+                maxY = Math.max(maxY, d.y);
+            });
+
+            // 图谱宽高
+            const graphW = maxX - minX;
+            const graphH = maxY - minY;
+            // 屏幕宽高
+            const screenW = width;
+            const screenH = height;
+
+            // 计算自适应缩放（留 0.85 边距，不贴边）
+            const scaleX = screenW / graphW * 0.85;
+            const scaleY = screenH / graphH * 0.85;
+            const autoScale = Math.min(scaleX, scaleY);
+
+            // 图谱中心点
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+
+            // 执行自动平移+缩放，完整居中显示
+            svg.transition().duration(0)
+            .call(
+                zoom.transform,
+                d3.zoomIdentity
+                .translate(screenW / 2, screenH / 2)
+                .scale(autoScale)
+                .translate(-centerX, -centerY)
+            );
+}, 150);
+            
+
+
+        }
+
+        function drawGraph() {
+            g.selectAll("*").remove();
+            selectedNode = null;
+            neighborIds.clear();
+
+            link = g.append("g")
+                .selectAll("line")
+                .data(graphData.links)
+                .enter().append("line")
+                .attr("class", "link");
+
+            linkText = g.append("g")
+                .selectAll("text")
+                .data(graphData.links)
+                .enter().append("text")
+                .attr("class", "link-text")
+                .text(d => d.relation || "");
+
+            node = g.append("g")
+                .selectAll("g")
+                .data(graphData.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            // 绘制圆圈
+            node.append("circle")
+                .attr("class", d => `level-${d.level}`)
+                .attr("r", d => d.symbolSize / 2 || 22);
+
+            // ===== 多行文字自动换行 + 整体居中 =====
+            const textEle = node.append("text")
+                .attr("y", 0);
+
+textEle.each(function(d){
+    // 每行3个字自动换行
+    const lines = wrapText(d.name, 4);
+    // 【行距】自己随便调：10 紧凑 / 12 默认 / 14 宽松
+    const lineHeight = 20;
+
+    let tspan = d3.select(this)
+        .selectAll("tspan")
+        .data(lines);
+
+    tspan.enter()
+        .append("tspan")
+        .merge(tspan)
+        .text(t => t)
+        // 水平居中
+        .attr("x", 0)
+        // 关键：第一行向上偏移整体居中，后面每行只往下加行距
+        .attr("dy", (_, i) => i === 0 ?  -(lines.length - 1) * lineHeight / 2 : lineHeight);
+
+    tspan.exit().remove();
+});
+
+            // 悬浮提示
+            node.on("mouseover", function (event, d) {
+                tooltip.transition().duration(200).style("opacity", .9);
+                tooltip.html(`名称：${d.name}<br>层级：${d.level}`)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", () => {
+                tooltip.transition().duration(300).style("opacity", 0);
+            });
+
+            // 点击高亮
+            node.on("click", function(event, d){
+                event.stopPropagation();
+                if(selectedNode === d){
+                    clearHighlight();
+                    return;
+                }
+                selectedNode = d;
+                neighborIds.clear();
+                neighborIds.add(d.id);
+                graphData.links.forEach(edge => {
+                    if(edge.source.id === d.id) neighborIds.add(edge.target.id);
+                    if(edge.target.id === d.id) neighborIds.add(edge.source.id);
+                });
+                updateHighlight();
+            });
+
+            simulation = d3.forceSimulation(graphData.nodes)
+                .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(60))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collide", d3.forceCollide().radius(d => (d.symbolSize / 2 || 22) + 5));
+
+            simulation.on("tick", () => {
+                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                linkText.attr("x", d => (d.source.x + d.target.x) / 2)
+                        .attr("y", d => (d.source.y + d.target.y) / 2);
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+                filterByLevel(currentMaxLevel);
+                if(selectedNode) updateHighlight();
+            });
+        }
+
+        // 清空高亮
+        function clearHighlight(){
+            selectedNode = null;
+            neighborIds.clear();
+            node.classed("fade", false).classed("active-node", false);
+            link.classed("fade", false).classed("active-link", false);
+            linkText.classed("fade", false);
+        }
+
+        // 高亮淡化
+        function updateHighlight(){
+            node.each(function(d){
+                const n = d3.select(this);
+                n.classed("fade", !neighborIds.has(d.id));
+                n.classed("active-node", d.id === selectedNode.id);
+            });
+            link.each(function(d){
+                const l = d3.select(this);
+                const ok = neighborIds.has(d.source.id) && neighborIds.has(d.target.id);
+                l.classed("fade", !ok).classed("active-link", ok);
+            });
+            linkText.each(function(d){
+                const ok = neighborIds.has(d.source.id) && neighborIds.has(d.target.id);
+                d3.select(this).classed("fade", !ok);
+            });
+        }
+
+        function showLevel(maxLevel) {
+            currentMaxLevel = maxLevel;
+            filterByLevel(maxLevel);
+            d3.selectAll(".control-panel button").classed("active", false);
+            d3.select(`#show${maxLevel}`).classed("active", true);
+            if(selectedNode) updateHighlight();
+        }
+
+        function filterByLevel(maxLevel) {
+            node.style("display", d => d.level <= maxLevel ? "block" : "none");
+            link.style("display", d => d.source.level <= maxLevel && d.target.level <= maxLevel ? "block" : "none");
+            linkText.style("display", d => d.source.level <= maxLevel && d.target.level <= maxLevel ? "block" : "none");
+        }
+
+        function zoomIn() { svg.transition().call(zoom.scaleBy, 1.3); }
+        function zoomOut() { svg.transition().call(zoom.scaleBy, 0.7); }
+        function resetZoom() { svg.transition().call(zoom.transform, d3.zoomIdentity); }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
+        }
+        function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
+        }
+
+        window.addEventListener("resize", () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            svg.attr("width", width).attr("height", height);
+            simulation.force("center", d3.forceCenter(width / 2, height / 2)).restart();
+        });
+    </script>
+</body>
+</html>
