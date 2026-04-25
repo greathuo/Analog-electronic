@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甲乙类功率放大电路</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+        }
+        .desc {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 0px;
+            text-align: justify;
+            text-indent: 2em; /* 首行缩进2字符 */
+        }
+
+        /* ========== 滑动开关样式 ========== */
+        .switch-group {
+            margin: 10px 0 8px 0;
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 30px;
+        }
+        .switch-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-switch {
+            background-color: #2c7dfa;
+        }
+        input:checked + .slider-switch:before {
+            transform: translateX(26px);
+        }
+
+        .demo-section {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .circuit-img {
+            max-width: 70%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+        }
+        .wave-head {
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-right: 100px;
+        }
+        .wave-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: left;
+        }
+        #wavePauseBtn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        #wavePauseBtn.pause {
+            background-color: #444;
+        }
+        #wavePauseBtn.resume {
+            background-color: #28a745;
+        }
+        .wave-container {
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            margin: 0 0 20px;
+        }
+        .waveCanvas {
+            width: 100%;
+            aspect-ratio: 8/3;
+            background: initial;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-row">
+        <h1>甲乙类功率放大电路</h1>
+    </div>
+
+    <p class="desc">
+        BJT管存在开启阈值电压，乙类功放输入信号小于阈值电压时，两个功率管都截止，负载上没有输出电流，输出电压波形会在信号正、负半周交替过零处产生非线性失真，称为<b>交越失真</b>。
+    </p>
+    <p class="desc">
+        克服交越失真的方法：给两个管子稍微加上正偏电压，使其处于微导通状态。<b>功放电路工作在甲乙类</b>，功率转化效率较乙类功放略有下降。
+    </p>
+    
+    <!-- ========== 滑动开关 ========== -->
+    <div class="switch-group">
+        <div class="switch-item">
+            <span>开关\(\mathrm{K}_1\)</span>
+            <label class="switch">
+                <input type="checkbox" id="k1Switch">
+                <span class="slider-switch"></span>
+            </label>
+        </div>
+        <div class="switch-item">
+            <span>开关\(\mathrm{K}_2\)</span>
+            <label class="switch">
+                <input type="checkbox" id="k2Switch">
+                <span class="slider-switch"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="demo-section" id="mainDemo">
+        <img src="images/ClassAB.png" class="circuit-img" id="circuitImg" alt="功放电路">
+        
+        <!-- 标题+按钮同行容器 -->
+        <div class="wave-head">
+            <button id="wavePauseBtn" class="pause">暂停演示输出波形</button>
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="waveCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 开关状态
+    let k1Closed = false;
+    let k2Closed = false;
+    let isPaused = false;
+    let drawX = 0;
+    let animationId = null;
+
+    // DOM元素
+    const k1Switch = document.getElementById('k1Switch');
+    const k2Switch = document.getElementById('k2Switch');
+    const wavePauseBtn = document.getElementById('wavePauseBtn');
+    const circuitImg = document.getElementById('circuitImg');
+    const waveCanvas = document.getElementById('waveCanvas');
+    const waveCtx = waveCanvas.getContext('2d');
+
+    // 画布尺寸
+    waveCanvas.width = 800;
+    waveCanvas.height = 300;
+    const canvasW = 800;
+    const canvasH = 300;
+    const centerX = 80;
+    const centerY = 150;
+    const amplitude = 80;
+    const step = 4;
+
+    // 初始化
+    updateCircuitImage();
+    bindEvents();
+    animate();
+
+    // 绑定事件
+    function bindEvents() {
+        // K1 滑动开关
+        k1Switch.addEventListener('change', () => {
+            k1Closed = k1Switch.checked;
+            updateCircuitImage();
+            resetWave();
+        });
+
+        // K2 滑动开关
+        k2Switch.addEventListener('change', () => {
+            k2Closed = k2Switch.checked;
+            updateCircuitImage();
+            resetWave();
+        });
+
+        // 波形暂停/恢复
+        wavePauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                wavePauseBtn.className = 'resume';
+                wavePauseBtn.textContent = '恢复演示输出波形';
+            } else {
+                wavePauseBtn.className = 'pause';
+                wavePauseBtn.textContent = '暂停演示输出波形';
+            }
+        });
+    }
+
+    // 更新电路图片
+    function updateCircuitImage() {
+        if (!k1Closed && !k2Closed) {
+            circuitImg.src = 'images/ClassAB.png';
+        } else if (k1Closed && !k2Closed) {
+            circuitImg.src = 'images/ClassAB-part1.png';
+        } else if (!k1Closed && k2Closed) {
+            circuitImg.src = 'images/ClassAB-part2.png';
+        } else {
+            circuitImg.src = 'images/ClassB.png';
+        }
+    }
+
+    // 重置波形
+    function resetWave() {
+        drawX = 0;
+    }
+
+    // 动画主循环
+    function animate() {
+        if (!isPaused) {
+            drawX += step;
+            if (drawX > canvasW - 120) drawX = 0;
+        }
+        drawWave();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // 绘制波形
+    function drawWave() {
+        const ctx = waveCtx;
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        ctx.lineWidth = 2;
+
+        drawAxis(ctx);
+
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = '#e53e3e';
+        ctx.beginPath();
+
+        for (let x = 0; x <= drawX; x++) {
+            const t = x / 50;
+            let y;
+
+            if (!k1Closed && !k2Closed) {
+                y = centerY - Math.sin(t) * amplitude;
+            } 
+            else if (k1Closed && !k2Closed) {
+                const sinVal = Math.sin(t);
+                if (sinVal > 0.15){
+                    y = centerY - sinVal * amplitude;
+                }
+                else if (sinVal < 0){
+                    y = centerY - Math.sin(t) * amplitude;
+                }
+                else {
+                    y = centerY;
+                }
+            } 
+            else if (!k1Closed && k2Closed) {
+                const sinVal = Math.sin(t);
+                if (sinVal < -0.15){
+                    y = centerY - sinVal * amplitude;
+                }
+                else if (sinVal > 0){
+                    y = centerY - Math.sin(t) * amplitude;
+                }
+                else {
+                    y = centerY;
+                }
+            } 
+            else {
+                const sinVal = Math.sin(t);
+                y = Math.abs(sinVal) < 0.15 ? centerY : centerY - sinVal * amplitude;
+            }
+
+            const px = centerX + x;
+            x === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+        }
+        ctx.stroke();
+    }
+
+    // 绘制坐标轴
+    function drawAxis(ctx) {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 5;
+
+        ctx.font = "32px Microsoft YaHei";  
+        ctx.fillStyle = '#333';
+
+        // 横轴
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(canvasW - 40, centerY);
+        ctx.lineTo(canvasW - 50, centerY - 6);
+        ctx.moveTo(canvasW - 40, centerY);
+        ctx.lineTo(canvasW - 50, centerY + 6);
+        ctx.stroke();
+        ctx.fillText('时间', canvasW - 90, centerY + 40);
+
+        // 纵轴
+        ctx.beginPath();
+        ctx.moveTo(centerX, canvasH - 30);
+        ctx.lineTo(centerX, 30);
+        ctx.lineTo(centerX - 6, 40);
+        ctx.moveTo(centerX, 30);
+        ctx.lineTo(centerX + 6, 40);
+        ctx.stroke();
+        ctx.fillText('幅度', centerX +10, 45);
+
+        ctx.fillText('O', centerX - 15, centerY + 5);
+    }
+</script>
+</body>
+</html>
