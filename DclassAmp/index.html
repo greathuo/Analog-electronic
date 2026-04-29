@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D类功率放大器</title>
+<script>
+    window.MathJax = {
+        tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+        startup: { typeset: true }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+        background:#fff;
+        font-family:"Microsoft YaHei";
+        padding:20px;
+        color:#333
+    }
+    .container{
+        max-width:1000px;
+        margin:0 auto
+    }
+    h1{
+        text-align:center;
+        margin-bottom:10px;
+        font-size:18px
+    }
+    .box{
+        margin: 0 0
+    }
+    .wave-wrap{
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        background: #fafbfc;
+        margin-bottom: 20px;
+    }
+    /* 分割线间距最小化 */
+    .divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 2px 0 10px; /* 👈 间距最小 */
+    }
+    /* 标题（文字）与波形间距最小 */
+    .title{
+        font-size:16px;
+        color:#333;
+        margin: 0 0 2px; /* 👈 关键：间距最小 */
+        text-indent: 2em; /* 👈 去掉首行缩进，更紧凑 */
+    }
+    .title:first-of-type{
+        margin-top: 0;
+    }
+    .schema-img{
+        width:95%;
+        max-width:760px;
+        display:block;
+        margin: 12px;
+        border-radius:8px
+    }
+    .ctrl{
+        background:transparent;
+        padding:15px;
+        border-radius:10px;
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-bottom:15px
+    }
+    .item{
+        display:flex;
+        align-items:center;
+        gap:0px
+    }
+    .item label{
+        min-width:120px
+    }
+    canvas{
+        width:100%;
+        height:100px;
+        background:#fff;
+        border-radius:6px;
+        display:block;
+        margin-bottom:0px; /* 👈 画布底部无间距 */
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>D类功率放大器</h1>
+
+    <div class="box">
+        <div class="title">D类功放中的晶体管等效为开关，交替工作在饱和导通与截止状态。工作在开关状态下的管子功耗很小，可获得很高的转换效率。</div>
+        <img src="images/circuit.png" class="schema-img" alt="原理框图">
+    </div>
+
+    <div class="ctrl">
+        <div class="item">
+            <label>输入信号\(u_\mathrm{i}\)幅度：</label>
+            <input type="range" id="amp" min="0.2" max="1" step="0.05" value="0.7">
+        </div>
+        <div class="item">
+            <label>三角波频率：</label>
+            <input type="range" id="freq" min="6" max="20" step="1" value="12">
+        </div>
+    </div>
+
+    <div class="wave-wrap">
+        <div class="title">
+            <span style="color:#0066cc;">输入信号\(u_\mathrm{i}\)</span>
+            与
+            <span style="color:#ff6600;">三角波\(u_\mathrm{T}\)</span>
+        </div>
+        <canvas id="c1"></canvas>
+        <div class="divider"></div>
+
+        <div class="title" style="color: #009933;">比较器输出\(u_\mathrm{o1}\)</div>
+        <canvas id="c2"></canvas>
+        <div class="divider"></div>
+
+        <div class="title" style="color: #cc0066;">开关管输出\(u_\mathrm{o2}\)</div>
+        <canvas id="c3"></canvas>
+        <div class="divider"></div>
+
+        <div class="title" style="color: #ff9900;">低通滤波输出\(u_\mathrm{o}\)</div>
+        <canvas id="c4"></canvas>
+    </div>
+</div>
+
+<script>
+let amp = 0.5;
+let freq = 12;
+const W = 330;
+const H = 100;
+const midY = H / 2;
+const dpr = window.devicePixelRatio || 1;
+
+const c1=document.getElementById('c1'),c2=document.getElementById('c2'),c3=document.getElementById('c3'),c4=document.getElementById('c4');
+[c1,c2,c3,c4].forEach(c=>{
+    c.width = W * dpr;
+    c.height = H * dpr;
+    c.style.width = W + "px";
+    c.style.height = H + "px";
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+});
+
+function drawAll(){
+    const ctx1 = c1.getContext('2d');
+    const ctx2 = c2.getContext('2d');
+    const ctx3 = c3.getContext('2d');
+    const ctx4 = c4.getContext('2d');
+
+    ctx1.clearRect(0,0,W,H);
+    ctx2.clearRect(0,0,W,H);
+    ctx3.clearRect(0,0,W,H);
+    ctx4.clearRect(0,0,W,H);
+
+    ctx1.strokeStyle='#eee'; ctx1.lineWidth=1; ctx1.beginPath(); ctx1.moveTo(0,midY); ctx1.lineTo(W,midY); ctx1.stroke();
+    ctx2.strokeStyle='#eee'; ctx2.lineWidth=1; ctx2.beginPath(); ctx2.moveTo(0,midY); ctx2.lineTo(W,midY); ctx2.stroke();
+    ctx3.strokeStyle='#eee'; ctx3.lineWidth=1; ctx2.beginPath(); ctx3.moveTo(0,midY); ctx3.lineTo(W,midY); ctx3.stroke();
+    ctx4.strokeStyle='#eee'; ctx4.lineWidth=1; ctx4.beginPath(); ctx4.moveTo(0,midY); ctx4.lineTo(W,midY); ctx4.stroke();
+
+    // 波形1
+    ctx1.strokeStyle = '#0066cc';
+    ctx1.lineWidth = 1.5;
+    ctx1.beginPath();
+    for(let x=0;x<W;x++){
+        const t = (x/W)*2*Math.PI;
+        const sin = amp * Math.sin(t);
+        const y = midY - sin*45;
+        x===0 ? ctx1.moveTo(x,y) : ctx1.lineTo(x,y);
+    }
+    ctx1.stroke();
+
+    ctx1.strokeStyle = '#ff6600';
+    ctx1.lineWidth = 1.2;
+    ctx1.beginPath();
+    for(let x=0;x<W;x++){
+        const t = (x/W)*2*Math.PI;
+        const ph = (t*freq) % 2;
+        const tri = ph<1 ? ph-0.5 : 1.5-ph;
+        const y = midY - tri*45;
+        x===0 ? ctx1.moveTo(x,y) : ctx1.lineTo(x,y);
+    }
+    ctx1.stroke();
+
+    // 波形2
+    ctx2.strokeStyle = '#009933';
+    ctx2.lineWidth = 1.5;
+    ctx2.beginPath();
+    for(let x=0;x<W;x++){
+        const t = (x/W)*2*Math.PI;
+        const sin = amp * Math.sin(t);
+        const ph = (t*freq) % 2;
+        const tri = ph<1 ? ph-0.5 : 1.5-ph;
+        const pwm = sin>tri ? 1 : -1;
+        const y = midY - pwm*40;
+        x===0 ? ctx2.moveTo(x,y) : ctx2.lineTo(x,y);
+    }
+    ctx2.stroke();
+
+    // 波形3
+    ctx3.strokeStyle = '#cc0066';
+    ctx3.lineWidth = 1.5;
+    ctx3.beginPath();
+    for(let x=0;x<W;x++){
+        const t = (x/W)*2*Math.PI;
+        const sin = amp * Math.sin(t);
+        const ph = (t*freq) % 2;
+        const tri = ph<1 ? ph-0.5 : 1.5-ph;
+        const sw = sin>tri ? 1 : -1;
+        const y = midY - sw*45;
+        x===0 ? ctx3.moveTo(x,y) : ctx3.lineTo(x,y);
+    }
+    ctx3.stroke();
+
+    // 波形4
+    ctx4.strokeStyle = '#ff9900';
+    ctx4.lineWidth = 1.5;
+    ctx4.beginPath();
+    for(let x=0;x<W;x++){
+        const t = (x/W)*2*Math.PI;
+        const sin = amp * Math.sin(t);
+        const y = midY - sin*45;
+        x===0 ? ctx4.moveTo(x,y) : ctx4.lineTo(x,y);
+    }
+    ctx4.stroke();
+}
+
+document.getElementById('amp').oninput = e=>{amp=+e.target.value;drawAll();}
+document.getElementById('freq').oninput = e=>{freq=+e.target.value;drawAll();}
+
+drawAll();
+</script>
+</body>
+</html>
