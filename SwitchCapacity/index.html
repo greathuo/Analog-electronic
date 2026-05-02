@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>开关电容滤波电路 - 波形交互</title>
+    <script>
+        window.MathJax = {
+            tex: { 
+                inlineMath: [['$','$'], ['\\(','\\)']],
+                displayMath: [['$$','$$'], ['\\[','\\]']],
+                align: 'align'
+            },
+            chtml: { scale: 1.05 },
+            startup: { typeset: true }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+}
+body {
+  background-color: Canvas;
+  color: CanvasText;
+  padding: 20px 2px;
+}
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 4px 0 25px 0;
+  border-radius: 12px;
+}
+h1 {
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.desc-list {
+  list-style: disc;
+  padding-left: 25px;
+  margin: 10px 0 0 0;
+  text-align: left;
+}
+.desc-list li {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 4px 0;
+  padding-left: 5px;
+  text-indent: 0;
+}
+.circuit-img {
+  display: block;
+  max-width: 70%;
+  height: auto;
+  margin: 0 auto 15px;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  background: none;
+}
+.section {
+  margin-bottom: 10px;
+}
+h2 {
+  font-size: 14px;
+  padding-left: 20px;
+}
+.formula {
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+.wave-container {
+  width: 90%;
+  height: 150px;
+}
+.slider-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px !important;
+  gap: 8px;
+}
+.slider-item label {
+  min-width: 180px;
+  font-weight: 500;
+}
+.slider-item input {
+  flex: 1;
+  width: 100px;
+}
+.slider-item .val {
+  min-width: 70px;
+  font-weight: bold;
+  color: #0066cc;
+}
+.cap-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  padding: 0 5px;
+  justify-content: space-between;
+}
+.cap-col {
+  display: flex;
+  align-items: center;
+  gap: 4;
+  flex: 1;
+  min-width: 140px;
+}
+.cap-col label {
+  min-width: 35px;
+  font-weight:500;
+}
+.cap-col .val {
+  white-space: nowrap;
+}
+.cap-col input {
+  width: 80px;
+}
+.wave-svg {
+  width: 130%;
+  height: 85px;
+  display: block;
+}
+.wave-container#wave2 {
+  margin-bottom: -60px !important;
+}
+.freq-result {
+  font-size: 16px;
+  color: #ff0000;
+  font-weight: 500;
+}
+.gain-result {
+  font-size: 16px;
+  color: #0066cc;
+  font-weight: 500;
+}
+/* 波特图容器 */
+.bode-wrap {
+  width: 90%;
+  height: 200px;
+  margin: 15px auto 0;
+}
+.short-slider {
+  width: 160px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>开关电容滤波电路</h1>
+
+  <ol class="desc-list">
+    <li>\(\mathrm{T}_1、\mathrm{T}_2和C_1\)构成的等效电阻\(R=\dfrac{T_\mathrm{CP1}}{C_1}\)</li>
+    <li>\(\mathrm{T}_3、\mathrm{T}_4和C_2\)构成的等效电阻\(R_\mathrm{f}=\dfrac{T_\mathrm{CP2}}{C_2}\)</li>
+    <li>图示电路的传递函数
+    <div style="font-size:75%;">
+      $$
+      \begin{equation*}
+      A_\mathrm{u}(\mathrm{j}f) = -\frac{R_\mathrm{f}}{R}\frac{1}{1+\mathrm{j}f R_\mathrm{f}C_\mathrm{f}} \\
+      = -\frac{T_\mathrm{CP2}/{C_2}}{T_\mathrm{CP1}/{C_1}}\frac{1}{1+\mathrm{j}f C_\mathrm{f}T_\mathrm{CP2}/{C_2}}
+      \end{equation*}
+      $$
+    </div>
+    </li>
+  </ol>
+  <img src="images/circuit.png" alt="开关电容滤波电路原理图" class="circuit-img">
+
+<div style="height:1px; background:#ccc; margin:20px 0 12px 0;"></div>
+
+  <div class="section" style="margin:0 20px;">
+    <div id="wave2" class="wave-container"><svg class="wave-svg" id="svg2" viewBox="100 40 500 150"></svg></div>
+
+    <div class="slider-item">
+      <label>若\(f_\mathrm{CP1}=f_\mathrm{CP2}=\frac{1}{T_\mathrm{CP}}\)：</label>
+      <input type="range" id="tcp2" min="10" max="30" value="22" oninput="refreshAll()">
+      <span class="val" id="tcp2_val">22</span>
+    </div>
+
+    <div class="cap-row">
+      <div class="cap-col">
+        <label>\(C_1\)：</label>
+        <input type="range" id="c1" min="10" max="100" value="50" oninput="refreshAll()">
+        <span class="val" id="c1_val">50 pF</span>
+      </div>
+      <div class="cap-col">
+        <label>\(C_2\)：</label>
+        <input type="range" id="c2" min="10" max="100" value="50" oninput="refreshAll()">
+        <span class="val" id="c2_val">50 pF</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 带实线边框的参数显示框 -->
+  <div style="border: 1.5px solid #333; padding: 10px 16px; margin: 12px 20px; border-radius: 6px; background:#fcfcfc;">
+    <div class="freq-result" style="margin:0 0 6px 0;">
+      高频截频：\(f_\mathrm{H}=\dfrac{C_2f_\mathrm{CP2}}{C_\mathrm{f}}=\)
+      <span id="wh_val" style="font-weight:bold;">62.0kHz</span>
+    </div>
+
+    <div class="gain-result" style="margin:0;">
+      中频增益：\(A_0=-\dfrac{C_1 f_\mathrm{CP1}}{C_2 f_\mathrm{CP2}}=\)
+      <span id="gain_val" style="font-weight:bold;">-1.00</span>
+    </div>
+  </div>
+
+  <!-- 波特图画布 -->
+  <div class="bode-wrap">
+    <canvas id="bodeChart"></canvas>
+  </div>
+
+</div>
+
+<script>
+const SVG_W = 1000;
+const Y_H = 50;
+const Y_L = 120;
+const LABEL_Y = 160;
+
+const Cf = 1e-9;
+let C1, C2;
+let freqCP2;
+let bodeChart = null;
+let currentWh = 62000; // 初始 62kHz
+
+window.onload = function(){
+  refreshAll();
+};
+
+function refreshAll(){
+  let c1Val = +document.getElementById("c1").value;
+  let c2Val = +document.getElementById("c2").value;
+  
+  C1 = c1Val * 1e-12;
+  C2 = c2Val * 1e-12;
+
+  document.getElementById("c1_val").innerText = c1Val + " pF";
+  document.getElementById("c2_val").innerText = c2Val + " pF";
+
+  let v2 = +document.getElementById("tcp2").value;
+  freqCP2 = 100 + (v2 - 10) * (2000 - 100) / (30 - 10);
+  document.getElementById("tcp2_val").innerText = freqCP2 >= 1000 ? (freqCP2/1000).toFixed(2) + "MHz" : freqCP2.toFixed(0) + "kHz";
+
+  drawRectWave("svg2", v2, "$T_\\mathrm{CP}$", "#2a9d8f");
+  
+  calcHighFreq();
+  calcGain();
+  drawBode();
+  MathJax.typesetPromise();
+}
+
+// 高频截频计算（自动单位）
+function calcHighFreq(){
+  let f = freqCP2 * 1000;
+  currentWh = (C2 * f) / Cf;
+  
+  if(currentWh >= 1000) {
+    document.getElementById("wh_val").innerText = (currentWh / 1000).toFixed(1) + "kHz";
+  } else {
+    document.getElementById("wh_val").innerText = currentWh.toFixed(0) + "Hz";
+  }
+}
+
+function calcGain(){
+  let c1 = parseFloat(document.getElementById("c1").value);
+  let c2 = parseFloat(document.getElementById("c2").value);
+  let gain = -(c1 / c2);
+  document.getElementById("gain_val").innerText = gain.toFixed(2);
+  return gain;
+}
+
+function drawRectWave(svgId, sliderVal, label, c1){
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = "";
+
+  const totalCycle = 25;
+  let singleW = 120 - 80 * (sliderVal - 10) / 20;
+  let perW = singleW;
+
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  defs.innerHTML = `<marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#333"/>
+    </marker>
+    <marker id="arr_rev" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M10 0 L0 5 L10 10 Z" fill="#333"/>
+</marker>`;
+  svg.appendChild(defs);
+
+  let path1 = `M 0 ${Y_H}`;
+  for(let i = 0; i < totalCycle; i++){
+    let x0 = i * perW;
+    let xHalf = x0 + perW / 2;
+    let x1 = x0 + perW;
+    path1 += ` H ${xHalf} V ${Y_L} H ${x1} V ${Y_H}`;
+  }
+
+  let p1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p1.setAttribute("d", path1);
+  p1.setAttribute("stroke", c1);
+  p1.setAttribute("stroke-width", "3");
+  p1.setAttribute("fill", "none");
+  svg.appendChild(p1);
+
+  let dashL = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  dashL.setAttribute("x1", 0); dashL.setAttribute("x2", 0);
+  dashL.setAttribute("y1", 50); dashL.setAttribute("y2", 180);
+  dashL.setAttribute("stroke", "#999");
+  dashL.setAttribute("stroke-dasharray", "4 2");
+  dashL.setAttribute("stroke-width", "1.5");
+  svg.appendChild(dashL);
+
+  let dashR = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  dashR.setAttribute("x1", perW); dashR.setAttribute("x2", perW);
+  dashR.setAttribute("y1", 50); dashR.setAttribute("y2", 180);
+  dashR.setAttribute("stroke", "#999");
+  dashR.setAttribute("stroke-dasharray", "4 2");
+  dashR.setAttribute("stroke-width", "1.5");
+  svg.appendChild(dashR);
+
+  let lineT = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  lineT.setAttribute("x1", 10);
+  lineT.setAttribute("x2", perW-5);
+  lineT.setAttribute("y1", LABEL_Y);
+  lineT.setAttribute("y2", LABEL_Y);
+  lineT.setAttribute("stroke", "#333");
+  lineT.setAttribute("stroke-width", "2.5");
+  lineT.setAttribute("marker-start", "url(#arr_rev)");
+  lineT.setAttribute("marker-end", "url(#arr)");
+  svg.appendChild(lineT);
+
+  let fo = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+  fo.setAttribute("x", perW/2 - 30);
+  fo.setAttribute("y", LABEL_Y - 30);
+  fo.setAttribute("width", "60");
+  fo.setAttribute("height", "30");
+  fo.innerHTML = `<div style="text-align:center;font-size:22px;">${label}</div>`;
+  svg.appendChild(fo);
+}
+
+// 绘制一阶低通幅频波特图
+function drawBode(){
+  let A0 = Math.abs(calcGain());
+  let wh = currentWh;
+
+  let dataX = [];
+  let dataY = [];
+  let start = 1;
+  let end = 1e8;
+  let num = 120;
+
+  for(let i=0;i<=num;i++){
+    let k = i/num;
+    let w = start * Math.pow(end/start, k);
+    let mag = 20 * Math.log10( A0 / Math.sqrt(1 + (w/wh)**2) );
+    dataX.push(w);
+    dataY.push(mag);
+  }
+
+  let ctx = document.getElementById("bodeChart").getContext("2d");
+  if(bodeChart) bodeChart.destroy();
+
+  bodeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dataX,
+      datasets: [{
+        label: '幅频特性 (dB)',
+        data: dataY,
+        borderColor: '#1976D2',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+      legend: {
+        display: true,
+        position: 'top',        
+        align: 'end',           
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'line',     
+          font: { size: 12 }
+        }
+      },
+      customLine: { wh: wh }
+      },
+      scales: {
+        x: {
+          type: 'logarithmic',
+          title: { display: true, text: '频率 (Hz)' },
+          min: 1, max: 1e8,
+          grid: { display: false },
+          ticks: { display: false }
+        },
+        y: {
+          title: { display: true, text: '增益 (dB)' },
+          min: -40, max: 20,
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      }
+    },
+    plugins: [{
+      id: 'customLine',
+      afterDraw: (chart) => {
+        const wh = chart.config.options.plugins.customLine.wh;
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+        const x = xAxis.getPixelForValue(wh);
+
+        ctx.save();
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, yAxis.top);
+        ctx.lineTo(x, yAxis.bottom);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        
+        let unit = wh >= 1000 ? (wh/1000).toFixed(1)+'kHz' : wh.toFixed(0)+'Hz';
+        ctx.fillText(unit, x, yAxis.bottom+1);
+        ctx.restore();
+      }
+    }]
+  });
+}
+</script>
+</body>
+</html>
