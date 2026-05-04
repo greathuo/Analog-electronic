@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>第三章问题图谱</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      padding: 10px;
+      font-family: "微软雅黑", sans-serif;
+      background: #f9f9f9;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 16px;
+      margin: 10px 0;
+      color: #333;
+    }
+
+    .legend {
+      padding: 0;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    #graph {
+      width: 100%;
+      height: calc(100vh - 110px);
+      background: transparent !important;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .node { cursor: pointer; }
+    .node-text { font-size: 11px; pointer-events: none; fill: #333; }
+    .link-text { font-size: 9px; fill: #666; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
+
+    @media (max-width: 480px) {
+      .node-text { font-size: 10px; }
+      .link-text { font-size: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <h2>第三章问题图谱</h2>
+
+  <div class="legend">
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-color" style="background:#FF9800"></div> 为什么</div>
+      <div class="legend-item"><div class="legend-color" style="background:#4CAF50"></div> 是什么</div>
+      <div class="legend-item"><div class="legend-color" style="background:#2196F3"></div> 怎么做</div>
+      <div class="legend-item"><div class="legend-color" style="background:#9C27B0"></div> 有何用</div>
+    </div>
+  </div>
+
+  <div id="graph"></div>
+
+  <script>
+    window.addEventListener('resize', renderGraph);
+    renderGraph();
+
+    function renderGraph() {
+      d3.select("#graph").selectAll("*").remove();
+      const container = document.getElementById("graph");
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const margin = 20;
+
+      const linkColorMap = {
+        "前置": "#2196F3",
+        "并列": "#4CAF50",
+        "推导": "#FF9800",
+        "应用": "#9C27B0",
+        "包含": "#E91E63",
+        "改善": "#f44336",
+        "基础": "#607D8B"
+      };
+
+      const svg = d3.select("#graph")
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("background", "transparent");
+
+      const g = svg.append("g");
+      const zoom = d3.zoom().scaleExtent([0.3, 2.5]).on("zoom", (e) => {
+        g.attr("transform", e.transform);
+      });
+      svg.call(zoom);
+
+      d3.json("graph-data.json").then(data => {
+        const simulation = d3.forceSimulation(data.nodes)
+          .force("link", d3.forceLink(data.links).id(d => d.id).distance(55))
+          .force("charge", d3.forceManyBody().strength(-220))
+          .force("center", d3.forceCenter(width / 2, height * 0.28))
+          .force("collide", d3.forceCollide().radius(28))
+          .alphaDecay(0.1);
+
+        const link = g.append("g").selectAll("line")
+          .data(data.links).enter().append("line")
+          .attr("stroke-width", 1.6)
+          .attr("stroke", d => linkColorMap[d.type] || "#999");
+
+        const linkText = g.append("g").selectAll("text")
+          .data(data.links).enter().append("text")
+          .attr("class", "link-text")
+          .text(d => d.type);
+
+        const node = g.append("g").selectAll("circle")
+          .data(data.nodes).enter().append("circle")
+          .attr("class", "node").attr("r", 9)
+          .attr("fill", d => d.color)
+          .call(d3.drag().on("start", drag).on("drag", drag).on("end", dragEnd));
+
+        const text = g.append("g").selectAll("text")
+          .data(data.nodes).enter().append("text")
+          .attr("class", "node-text").attr("dx", 10).attr("dy", 4).text(d => d.name);
+
+        node.on("click", (e, d) => {
+          const connected = new Set();
+          data.links.forEach(l => {
+            if (l.source.id === d.id) connected.add(l.target.id);
+            if (l.target.id === d.id) connected.add(l.source.id);
+          });
+          node.attr("opacity", n => n.id === d.id || connected.has(n.id) ? 1 : 0.1);
+          text.attr("opacity", n => n.id === d.id || connected.has(n.id) ? 1 : 0.1);
+          link.attr("opacity", l => l.source.id === l.target.id || l.source.id === d.id || l.target.id === d.id ? 1 : 0.1);
+          linkText.attr("opacity", l => l.source.id === l.target.id || l.source.id === d.id || l.target.id === d.id ? 1 : 0.1);
+        });
+
+        svg.on("click", (e) => {
+          if (e.target === svg.node()) {
+            node.attr("opacity", 1);
+            text.attr("opacity", 1);
+            link.attr("opacity", 0.8);
+            linkText.attr("opacity", 1);
+          }
+        });
+
+        function drag(e, d) {
+          if (!e.active) simulation.alphaTarget(0.3).restart();
+          d.fx = Math.max(margin, Math.min(width - margin, e.x));
+          d.fy = Math.max(margin, Math.min(height - margin, e.y));
+        }
+        function dragEnd(e, d) {
+          if (!e.active) simulation.alphaTarget(0);
+          d.fx = null; d.fy = null;
+        }
+
+        // ====================== 修复完成：文字永远居中在连线 ======================
+        simulation.on("tick", () => {
+          link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+              .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+          linkText
+            .attr("x", d => (d.source.x + d.target.x) / 2)
+            .attr("y", d => (d.source.y + d.target.y) / 2)
+            .attr("transform", d => {
+              const dx = d.target.x - d.source.x;
+              const dy = d.target.y - d.source.y;
+              let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+              // 让文字永远正向可读（修复倒立文字）
+              if (angle > 90) angle -= 180;
+              if (angle < -90) angle += 180;
+
+              return `rotate(${angle} ${(d.source.x + d.target.x) / 2} ${(d.source.y + d.target.y) / 2})`;
+            });
+
+          node.attr("cx", d => d.x = Math.max(margin, Math.min(width - margin, d.x)))
+              .attr("cy", d => d.y = Math.max(margin, Math.min(height - margin, d.y)));
+
+          text.attr("x", d => d.x).attr("y", d => d.y);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
