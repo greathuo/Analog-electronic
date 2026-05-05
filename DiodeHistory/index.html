@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二极管的发展历程</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D0',
+                        neutral: '#F5F7FA',
+                        dark: '#1D2129'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+            /* 时间线：固定蓝色基线 + 流光下落动画 */
+            .timeline-line {
+                position: absolute;
+                left: 50%;
+                top: 0;
+                transform: translateX(-50%);
+                width: 10px;
+                height: 103.1%;
+                background: #165DFF;
+                overflow: hidden;
+            }
+            .timeline-line::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(to bottom, transparent, #fff, transparent);
+                animation: lineFlow 2.5s linear infinite;
+            }
+            @keyframes lineFlow {
+                0% { top: -100%; }
+                100% { top: 100%; }
+            }
+            .modal-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-box {
+                background: white;
+                max-width: 700px;
+                width: 90%;
+                border-radius: 16px;
+                overflow: hidden;
+                position: relative;
+                animation: modalIn 0.3s ease;
+            }
+            @keyframes modalIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            .close-btn {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: #fff;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 1001;
+                font-size: 18px;
+                border: 1px solid #eee;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral text-dark min-h-screen">
+    <!-- 头部区域 -->
+    <header class="sticky top-0 z-50 bg-white shadow-md pb-0">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-xl md:text-2xl font-bold text-primary mb-2 text-center">
+                二极管的发展历程
+            </h1>
+            <p class="text-base text-gray-600 text-left indent-8">
+                二极管是最常用的电子器件之一，具有单向导电性，核心结构是<strong>PN结</strong>，是半导体器件的基础。
+            </p>
+            <p class="text-base text-gray-600 text-left indent-8">
+                从早期的矿石检波器，到真空二极管，再到半导体二极管，二极管发展见证了电子技术从无到有、从弱到强的全过程。
+            </p>
+        </div>
+    </header>
+
+    <!-- 时间线（点击圆圈/灰色框弹出卡片） -->
+    <section id="history" class="py-8 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="relative max-w-5xl mx-auto pb-10">
+                <div class="timeline-line"></div>
+                
+                <!-- 1874 -->
+                <div class="relative mb-16">
+                    <div onclick="openModal(1)" class="w-12 h-12 bg-primary rounded-full absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center text-white font-bold text-base cursor-pointer">1874</div>
+                    <div class="flex flex-col md:flex-row items-center pt-8">
+                        <div class="mb-4 md:mb-0 md:w-1/2 md:pr-12 text-right">
+                            <p onclick="openModal(1)" class="bg-neutral p-4 rounded-lg shadow card-hover text-left">
+                                德国物理学家<strong>费迪南德·布劳恩</strong>发现金属与硫化铅晶体接触具有单向导电性，这是人类首次发现二极管效应。
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 hidden md:block"></div>
+                    </div>
+                </div>
+
+                <!-- 1904 -->
+                <div class="relative mb-16">
+                    <div onclick="openModal(2)" class="w-12 h-12 bg-primary rounded-full absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center text-white font-bold text-base cursor-pointer">1904</div>
+                    <div class="flex flex-col md:flex-row items-center pt-8">
+                        <div class="md:w-1/2 md:pr-12 hidden md:block"></div>
+                        <div class="mb-4 md:mb-0 md:w-1/2 md:pl-12">
+                            <p onclick="openModal(2)" class="bg-neutral p-4 rounded-lg shadow card-hover text-left">
+                                英国科学家<strong>约翰·弗莱明</strong>发明真空二极管，世界上第一个电子管器件，开启无线电通信时代。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1940 -->
+                <div class="relative mb-16">
+                    <div onclick="openModal(3)" class="w-12 h-12 bg-primary rounded-full absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center text-white font-bold text-base cursor-pointer">1940</div>
+                    <div class="flex flex-col md:flex-row items-center pt-8">
+                        <div class="mb-4 md:mb-0 md:w-1/2 md:pr-12 text-right">
+                            <p onclick="openModal(3)" class="bg-neutral p-4 rounded-lg shadow card-hover text-left">
+                                在贝尔实验室工作的<strong>拉塞尔·奥尔</strong>发现了PN结以及硅中的光伏效应，奠定现代电子学基础。
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 hidden md:block"></div>
+                    </div>
+                </div>
+
+                <!-- 1950 → 已改为两行居中显示 -->
+                <div class="relative mb-16">
+                    <div onclick="openModal(4)" 
+                         class="w-12 h-12 bg-primary rounded-full absolute left-1/2 -translate-x-1/2 z-10 
+                         flex flex-col items-center justify-center
+                         text-white font-bold text-xs cursor-pointer">
+                        <span>1950</span>
+                        <span>后</span>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center pt-8">
+                        <div class="md:w-1/2 md:pr-12 hidden md:block"></div>
+                        <div class="mb-4 md:mb-0 md:w-1/2 md:pl-12">
+                            <p onclick="openModal(4)" class="bg-neutral p-4 rounded-lg shadow card-hover text-left">
+                                <strong>威廉・肖克利</strong>奠定硅基二极管基础、<strong>沃尔特・肖特基</strong>提出肖特基二极管理论、<strong>尼克・何伦亚克</strong>发明实用LED，三大关键器件相继问世，二极管正式进入规模化、集成化、微型化时代。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 现代 -->
+                <div class="relative">
+                    <div onclick="openModal(5)" class="w-12 h-12 bg-primary rounded-full absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center text-white font-bold text-sm cursor-pointer">现代</div>
+                    <div class="flex flex-col md:flex-row items-center pt-8">
+                        <div class="mb-4 md:mb-0 md:w-1/2 md:pr-12 text-right">
+                            <p onclick="openModal(5)" class="bg-neutral p-4 rounded-lg shadow card-hover text-left">
+                                二极管广泛应用于电源、通信、光伏、显示、人工智能等领域，是现代科技不可或缺的器件。
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 hidden md:block"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 音频标签（隐藏） -->
+    <audio id="voice1" preload="auto"></audio>
+    <audio id="voice2" preload="auto"></audio>
+    <audio id="voice3" preload="auto"></audio>
+    <audio id="voice4" preload="auto"></audio>
+    <audio id="voice5" preload="auto"></audio>
+
+    <!-- 弹出模态框 → 已为 1950 定制三图布局 + 现代视频 -->
+    <div id="modal" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="close-btn" onclick="closeModal()">✕</div>
+
+            <!-- 默认单图（其他弹窗用） -->
+            <div id="default-image" class="w-full h-56 md:h-72 object-contain bg-gray-100"></div>
+
+            <!-- 1950 三科学家布局（默认隐藏） -->
+            <div id="scientist-1950" class="hidden px-6 pt-6 pb-2">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="flex flex-col items-center text-center">
+                        <img src="images/Shockley.png" class="h-28 object-contain mb-2">
+                        <p class="text-sm font-medium">威廉・肖克利<br/>（1910—1989）</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <img src="images/schottky.png" class="h-28 object-contain mb-2">
+                        <p class="text-sm font-medium">沃尔特・肖特基<br/>（1886—1976）</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <img src="images/Holonyak.png" class="h-28 object-contain mb-2">
+                        <p class="text-sm font-medium">尼克・何伦亚克<br/>（1928—2022）</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="p-6 md:p-8">
+                <h3 id="modal-title" class="text-xl md:text-2xl font-bold mb-3 text-center md:text-left"></h3>
+                <p id="modal-desc" class="text-gray-700 leading-relaxed text-base"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部 -->
+    <footer class="bg-primary text-white py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-0">二极管的发展历程 · 半导体 · 电子技术发展史</p>
+        </div>
+    </footer>
+
+    <!-- JS：弹出卡片 + 播放音频 + 现代弹窗视频 -->
+    <script>
+        const data = [
+            {
+                id:1,
+                img:"images/Braun.png",
+                audio:"audio/Braun.mp3",
+                title:"费迪南德·布劳恩（1850－1918）",
+                desc:"我在实验中首次发现金属与硫化铅晶体的接触具有单向导电特性，这是人类历史上第一次观测到二极管效应，为电子器件的诞生奠定了基础。这个发现直接催生了第一代矿石检波器，开启了电子时代的序幕。"
+            },
+            {
+                id:2,
+                img:"images/Fleming.png",
+                audio:"audio/Fleming.mp3",
+                title:"约翰·弗莱明（1849－1945）",
+                desc:"我发明了世界上第一个真空二极管，后人称为弗莱明阀。这是人类历史上第一种真正意义上的电子器件，能够实现整流和检波功能。真空二极管的出现标志着电子技术正式进入实用阶段，为无线电通信、广播和早期计算机提供了核心支撑。"
+            },
+            {
+                id:3,
+                img:"images/Ohl.png",
+                audio:"audio/Ohl.mp3",
+                title:"拉塞尔·奥尔（1898－1987）",
+                desc:"我在贝尔实验室工作期间，在硅棒切割的样品中意外发现了‌PN结，这一发现揭示了硅独特的电学特性，证明了半导体内部存在单向电流现象，是制造晶体管的关键前提，直接推动了晶体管、集成电路和现代微电子产业的诞生。"
+            },
+            {
+                id:4,
+                audio:"audio/1950.mp3",
+                title:"半导体二极管时代 - 1950年后",
+                desc:"1950年后，硅基二极管、肖特基二极管、发光二极管（LED）相继问世，二极管开始大规模量产并微型化。它们被广泛用于电源整流、信号调制、光电转换、数字逻辑电路等领域，成为现代电子设备不可或缺的基础器件，推动了消费电子、计算机和通信产业的高速发展。"
+            },
+            {
+                id:5,
+                audio:"audio/modern.mp3",
+                title:"现代二极管应用全景",
+                desc:"如今二极管已进化出数百种细分型号，全面覆盖5G通信、新能源光伏、LED光电显示、人工智能芯片、精密医疗设备、智能汽车电子六大核心系统领域。在通信领域支撑5G基站与卫星信号传输；在新能源领域服务光伏发电与储能充电；在光电领域赋能LED显示与智能照明；在高端芯片与AI设备中承担稳压与高速开关；在医疗仪器里保障精密信号检测；在新能源汽车中实现电控安全保护。从日常生活的手机充电器、家电数码，到工业尖端的卫星设备、算力中心，二极管无处不在，已是支撑现代电子信息与数字文明不可或缺的核心基础器件。"
+            }
+        ];
+
+        const modal = document.getElementById('modal');
+        const defaultImage = document.getElementById('default-image');
+        const scientist1950 = document.getElementById('scientist-1950');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        let currentAudio = null;
+
+        function openModal(id) {
+            stopAllAudio();
+            const item = data.find(x => x.id === id);
+            
+            // 弹窗内容智能切换：1950=三图 / 现代=视频 / 其他=单图
+            if(id === 4){
+                defaultImage.classList.add('hidden');
+                scientist1950.classList.remove('hidden');
+            } else if(id === 5){
+                // 现代：视频（静音自动播 + 有控件，用户可手动开声音）
+                defaultImage.classList.remove('hidden');
+                scientist1950.classList.add('hidden');
+                defaultImage.innerHTML = `
+                <video class="w-full h-full object-contain" muted loop playsinline controls>
+                    <source src="video/DiodeVideo.mp4" type="video/mp4">
+                </video>`;
+
+                setTimeout(()=>{
+                    const video = defaultImage.querySelector('video');
+                    if(video){
+                        video.play().catch(err=>{});
+                    }
+                }, 100);
+            } else {
+                // 其他：显示单张图片
+                defaultImage.classList.remove('hidden');
+                scientist1950.classList.add('hidden');
+                defaultImage.innerHTML = `<img src="${item.img}" class="w-full h-full object-contain">`;
+            }
+
+            modalTitle.innerText = item.title;
+            modalDesc.innerText = item.desc;
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+
+            currentAudio = document.getElementById(`voice${id}`);
+            currentAudio.src = item.audio;
+            currentAudio.play().catch(err => {});
+        }
+
+        // 关闭弹窗时，同时停止视频和音频
+        function closeModal() {
+            stopAllAudio(); 
+            const video = defaultImage.querySelector('video');
+            if(video){
+                video.pause();
+                video.currentTime = 0;
+            }
+            modal.style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+
+        function stopAllAudio() {
+            for(let i=1; i<=5; i++){
+                let a = document.getElementById(`voice${i}`);
+                a.pause();
+                a.currentTime = 0;
+            }
+        }
+
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal();
+        });
+    </script>
+</body>
+</html>
