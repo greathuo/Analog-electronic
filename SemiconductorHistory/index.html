@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>半导体器件发展历程</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#0E2885',
+            neutral: '#F5F7FA',
+            dark: '#1D1D1F',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .timeline-line {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      height: 100%;
+      width: 2px;
+      background: rgba(22, 93, 255, 0.3);
+    }
+    .animate-slide-up {
+      animation: slideUp 0.6s ease-out;
+    }
+    .digital-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      object-fit: cover;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .digital-avatar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(22, 93, 255, 0.4);
+    }
+    .speech-bubble {
+      position: absolute;
+      left: 80px;
+      top: 20px;
+      background: white;
+      padding: 14px 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 280px;
+      z-index: 10;
+      animation: fadeIn 0.6s ease;
+      white-space: normal;
+    }
+    .speech-bubble::before {
+      content: "";
+      position: absolute;
+      left: -8px;
+      top: 20px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 16px solid white;
+    }
+  </style>
+</head>
+<body class="bg-neutral text-dark antialiased">
+<header class="sticky top-0 z-50 bg-white shadow-md pb-0">
+  <div class="container mx-auto px-4 py-4">
+    <h1 class="text-xl md:text-2xl font-bold text-primary mb-2 text-center">
+      <i class="fa fa-microchip mr-2"></i>半导体器件发展历程
+    </h1>
+    <p class="text-lg text-gray-600 text-left indent-8">
+      从真空管到晶体管，从集成电路到先进芯片，点击人物垂听先驱讲解。
+    </p>
+  </div>
+</header>
+
+<section id="timeline" class="pt-8 pb-8 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="relative max-w-4xl mx-auto">
+      <div class="timeline-line"></div>
+
+      <!-- 1947 晶体管 -->
+      <div class="mb-16 ml-16 relative animate-slide-up">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">1947</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Shockley.png" alt="肖克利" class="digital-avatar" onclick="playSpeech(1)">
+          <div id="speech1" class="hidden speech-bubble">
+            我是威廉·肖克利，1947年我们发明了点接触晶体管！它体积小、功耗低、寿命长，彻底终结了真空管时代，开启了整个半导体时代！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">双极型晶体管诞生</h3>
+            <p class="text-gray-700">最早的半导体器件，通过电流控制导通，彻底取代真空管，奠定现代电子技术基础。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1958 集成电路 -->
+      <div class="mb-16 ml-16 relative animate-slide-up" style="animation-delay:0.2s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">1958</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Kilby.png" alt="基尔比" class="digital-avatar" onclick="playSpeech(2)">
+          <div id="speech2" class="hidden speech-bubble">
+            我是杰克·基尔比，1958年我发明了世界上第一个集成电路！证明所有电子元件都能用单一材料制造，让微型化成为可能！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">第一块集成电路问世</h3>
+            <p class="text-gray-700">将多个晶体管、电阻、电容集成在同一块半导体基片，实现电子元件一体化。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1959 硅集成电路 -->
+      <div class="mb-16 ml-16 relative animate-slide-up" style="animation-delay:0.4s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">1959</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Noyce.png" alt="诺伊斯" class="digital-avatar" onclick="playSpeech(3)">
+          <div id="speech3" class="hidden speech-bubble">
+            我是罗伯特·诺伊斯，我研发了可量产的硅集成电路！让芯片真正走向工业应用，开启了计算机与数码时代！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">硅基集成电路商业化</h3>
+            <p class="text-gray-700">解决集成电路互连与工业化生产难题，奠定现代芯片产业基础。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1968 MOS管 -->
+      <div class="mb-16 ml-16 relative animate-slide-up" style="animation-delay:0.6s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">1968</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Bardeen.png" alt="巴丁" class="digital-avatar" onclick="playSpeech(4)">
+          <div id="speech4" class="hidden speech-bubble">
+            我是约翰·巴丁，MOSFET的成熟让集成电路真正实现了低功耗、高密度！它支撑了超大规模集成电路的飞速发展！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">MOS场效应管普及</h3>
+            <p class="text-gray-700">电压控制型器件，功耗极低、集成度极高，成为现代集成电路最核心器件。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1971 微处理器 -->
+      <div class="mb-16 ml-16 relative animate-slide-up" style="animation-delay:0.8s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">1971</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Hoff.png" alt="特德·霍夫" class="digital-avatar" onclick="playSpeech(5)">
+          <div id="speech5" class="hidden speech-bubble">
+            我是特德·霍夫，1971年我在英特尔主导设计了世界第一枚微处理器Intel 4004，把整个计算机核心集成在一块芯片上，开启个人电脑与智能时代！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">微处理器诞生</h3>
+            <p class="text-gray-700">将计算机CPU集成在单芯片上，开创个人计算机时代，是集成电路技术的巅峰应用。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 现代先进制程 -->
+      <div class="ml-16 relative animate-slide-up" style="animation-delay:1s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">现代</div>
+        <div class="flex items-start gap-3 bg-neutral p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow relative">
+          <img src="images/Haoyue.png" alt="郝跃院士" class="digital-avatar" onclick="playSpeech(6)">
+          <div id="speech6" class="hidden speech-bubble">
+            我是郝跃，深耕微电子与第三代半导体领域。带领团队攻克氮化镓、碳化硅核心技术，打破国外垄断，支撑5G、雷达与先进芯片制程，推动中国宽禁带半导体走向世界前列！
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-primary mb-1">先进制程与第三代半导体</h3>
+            <p class="text-gray-700">3nm及以下制程量产，SiC/GaN半导体广泛应用，器件性能、功耗、集成度达到全新高度。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-primary text-white py-4">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-xl font-bold mb-0">科技改变世界 · 创新驱动未来</h2>
+  </div>
+</footer>
+
+<script>
+  // 全局音频对象，确保切换时自动停止上一个
+  let currentAudio = null;
+
+  // 播放语音 + 显示气泡
+  function playSpeech(id) {
+    // 1. 隐藏所有气泡
+    document.querySelectorAll('[id^="speech"]').forEach(item => item.classList.add('hidden'));
+    // 2. 停止当前播放
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+    // 3. 显示当前气泡
+    const bubble = document.getElementById(`speech${id}`);
+    bubble.classList.remove('hidden');
+    // 4. 播放对应语音
+    currentAudio = new Audio(`audio/voice${id}.mp3`);
+    currentAudio.play().catch(err => console.log('音频播放需用户交互'));
+  }
+
+  // 点击空白关闭
+  document.addEventListener('click', function(e) {
+    if(!e.target.classList.contains('digital-avatar')) {
+      document.querySelectorAll('[id^="speech"]').forEach(item => item.classList.add('hidden'));
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    }
+  });
+
+  // 滚动动画
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.animate-slide-up').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'all 0.6s ease-out';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>

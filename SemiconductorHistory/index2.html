@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>半导体器件发展历程 | 从晶体管到硅谷</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#0E2E85',
+            neutral: '#F5F7FA',
+            dark: '#1D2129',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style>
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(22,93,255,0.4); } 70% { box-shadow: 0 0 0 10px rgba(22,93,255,0); } 100% { box-shadow: 0 0 0 0 rgba(22,93,255,0); } }
+    
+    .timeline-line { position: absolute; left: 20px; top: 20px; height: 100%; width: 2px; background: rgba(22, 93, 255, 0.3); }
+    .animate-fade-in { animation: fadeIn 0.8s ease-in-out; }
+    .animate-slide-up { animation: slideUp 0.6s ease-out; }
+    .animate-pulse-slow { animation: pulse 2s infinite; }
+    
+    .digital-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      object-fit: cover; cursor: pointer;
+      transition: all 0.4s;
+    }
+    .digital-avatar:hover { transform: scale(1.15); box-shadow: 0 0 25px rgba(22,93,255,0.5); }
+    .digital-avatar.active { border-color: #165DFF; }
+    
+    .speech-bubble {
+      position: relative; background: white; padding: 16px;
+      border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 320px; animation: fadeIn 0.5s ease-in-out;
+    }
+    .speech-bubble::before {
+      content: ""; position: absolute; left: -8px; top: 50%;
+      transform: translateY(-50%); width: 0; height: 0;
+      border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 16px solid white;
+    }
+
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+    
+    .timeline-card { cursor: pointer; transition: all 0.3s; }
+    .timeline-card:hover { background: #eff6ff; transform: translateX(6px); }
+    .timeline-year { transition: all 0.3s; }
+    .timeline-card:hover .timeline-year { background: #0E2E85; transform: scale(1.1); }
+  </style>
+</head>
+<body class="bg-neutral text-dark antialiased">
+
+<header class="sticky top-0 z-50 bg-white shadow-md">
+  <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <h1 class="text-xl md:text-2xl font-bold text-primary"><i class="fa fa-microchip mr-2"></i>半导体器件发展历程</h1>
+    <nav class="hidden md:flex gap-6">
+      <a href="#timeline" class="hover:text-primary transition-colors">发展时间线</a>
+      <a href="#characters" class="hover:text-primary transition-colors">先驱人物</a>
+      <a href="#devices" class="hover:text-primary transition-colors">核心器件</a>
+      <a href="#legacy" class="hover:text-primary transition-colors">历史影响</a>
+    </nav>
+    <button class="md:hidden text-xl" id="menuBtn"><i class="fa fa-bars"></i></button>
+  </div>
+  <div id="mobileMenu" class="hidden bg-white px-4 pb-4 md:hidden">
+    <a href="#timeline" class="block py-2 hover:text-primary">发展时间线</a>
+    <a href="#characters" class="block py-2 hover:text-primary">先驱人物</a>
+    <a href="#devices" class="block py-2 hover:text-primary">核心器件</a>
+    <a href="#legacy" class="block py-2 hover:text-primary">历史影响</a>
+  </div>
+</header>
+
+<!-- 封面 -->
+<section class="bg-gradient-to-r from-primary to-secondary text-white py-16 md:py-24">
+  <div class="container mx-auto px-4 text-center">
+    <h1 class="text-3xl md:text-5xl font-bold mb-4 animate-fade-in">半导体器件发展历程</h1>
+    <p class="text-lg md:text-xl opacity-90 max-w-3xl mx-auto mb-8 animate-slide-up">
+      从真空管到晶体管，从集成电路到硅谷，一部重塑世界的电子革命史诗
+    </p>
+    <a href="#timeline" class="inline-block bg-white text-primary font-medium px-6 py-3 rounded-full hover:bg-neutral transition-all duration-300 animate-slide-up">
+      <i class="fa fa-arrow-down mr-2"></i>开启探索之旅
+    </a>
+  </div>
+</section>
+
+<!-- 先驱人物（已根据文档更新真实事迹） -->
+<section id="characters" class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-3">半导体先驱 · 数字人讲解</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">点击人物头像，聆听贝尔实验室与硅谷先驱亲口讲述半导体创新历程</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      <div class="flex flex-col items-center">
+        <img src="https://picsum.photos/seed/shockley/200/200" alt="威廉·肖克利" 
+             class="digital-avatar animate-pulse-slow" onclick="showSpeech(1)">
+        <p class="mt-3 font-medium text-center">威廉·肖克利</p>
+        <p class="text-xs text-gray-500">晶体管理论奠基人</p>
+        <div id="speech1" class="hidden speech-bubble mt-4">
+          我早在1939年就提出了半导体场效应理论，1947年领导贝尔实验室团队，最终诞生了改变世界的晶体管！我后来创办的实验室更是硅谷的起点。
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <img src="https://picsum.photos/seed/bardeen/200/200" alt="约翰·巴丁" 
+             class="digital-avatar" onclick="showSpeech(2)">
+        <p class="mt-3 font-medium text-center">约翰·巴丁</p>
+        <p class="text-xs text-gray-500">晶体管实际发明者</p>
+        <div id="speech2" class="hidden speech-bubble mt-4">
+          我与布拉顿在1947年12月16日完成第一个点接触晶体管实验！我也是历史上唯一两次获得诺贝尔物理学奖的科学家。
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <img src="https://picsum.photos/seed/brattain/200/200" alt="沃尔特·布拉顿" 
+             class="digital-avatar" onclick="showSpeech(3)">
+        <p class="mt-3 font-medium text-center">沃尔特·布拉顿</p>
+        <p class="text-xs text-gray-500">晶体管实验家</p>
+        <div id="speech3" class="hidden speech-bubble mt-4">
+          我用金箔、锗材料和回形针搭建出世界上第一个可工作的晶体管装置，1947年12月16日下午，我们见证了奇迹！
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <img src="https://picsum.photos/seed/noyce/200/200" alt="罗伯特·诺伊斯" 
+             class="digital-avatar" onclick="showSpeech(4)">
+        <p class="mt-3 font-medium text-center">罗伯特·诺伊斯</p>
+        <p class="text-xs text-gray-500">硅谷之父 / 集成电路</p>
+        <div id="speech4" class="hidden speech-bubble mt-4">
+          我离开肖克利实验室，创立仙童半导体，发明了可量产的硅集成电路，我是真正让芯片走向工业化的人！
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 时间线（100%根据文档史实更新） -->
+<section id="timeline" class="py-16 bg-neutral">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-3">半导体发展关键时间线</h2>
+      <p class="text-gray-600">贝尔实验室 → 晶体管 → 集成电路 → 硅谷崛起</p>
+    </div>
+
+    <div class="relative max-w-4xl mx-auto">
+      <div class="timeline-line"></div>
+
+      <!-- 1947 晶体管诞生 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1947</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">世界上第一个晶体管诞生</h3>
+          <p class="text-gray-700">
+            贝尔实验室的<b>巴丁 & 布拉顿</b>在1947年12月16日成功实现晶体管放大，肖克利提出理论，开启电子革命。
+          </p>
+        </div>
+      </div>
+
+      <!-- 1948 公布 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.15s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1948</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">晶体管正式公开</h3>
+          <p class="text-gray-700">
+            贝尔实验室在纽约召开发布会，正式公布晶体管发明，《纽约时报》将其刊登在46版不起眼位置，但历史从此改变。
+          </p>
+        </div>
+      </div>
+
+      <!-- 1956 诺贝尔奖 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.3s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1956</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">诺贝尔物理学奖</h3>
+          <p class="text-gray-700">
+            肖克利、巴丁、布拉顿因晶体管的发明获得诺贝尔奖，这是20世纪最重要的物理奖项之一。
+          </p>
+        </div>
+      </div>
+
+      <!-- 1957 八叛逆 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.45s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1957</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">“八叛逆”创立仙童半导体</h3>
+          <p class="text-gray-700">
+            诺伊斯、摩尔等8位科学家离开肖克利实验室，创立仙童半导体，成为硅谷文化与芯片产业的真正起点。
+          </p>
+        </div>
+      </div>
+
+      <!-- 1958 - 1959 集成电路 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.6s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1958-59</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">集成电路发明</h3>
+          <p class="text-gray-700">
+            基尔比实现锗基集成电路，诺伊斯发明可量产的<b>硅基集成电路</b>，解决互连与工业化难题。
+          </p>
+        </div>
+      </div>
+
+      <!-- 1968 英特尔 -->
+      <div class="mb-10 ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.75s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">1968</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">诺伊斯 & 摩尔创立英特尔</h3>
+          <p class="text-gray-700">
+            从仙童出走，创立Intel，奠定现代芯片与计算机产业基石，摩尔定律从此诞生。
+          </p>
+        </div>
+      </div>
+
+      <!-- 现代 -->
+      <div class="ml-16 relative timeline-card animate-slide-up" style="animation-delay:0.9s">
+        <div class="absolute -left-16 w-10 h-10 rounded-full bg-primary timeline-year flex items-center justify-center text-white">今天</div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="text-xl font-bold text-primary mb-2">先进芯片 & 第三代半导体</h3>
+          <p class="text-gray-700">
+            晶体管从针尖大小进化到指甲盖百亿颗，SiC/GaN第三代半导体普及，晶体管仍是数字时代基石。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 核心器件 -->
+<section id="devices" class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-3">核心半导体器件演进</h2>
+      <p class="text-gray-600">从点接触晶体管到现代芯片的技术跨越</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div class="bg-neutral rounded-xl p-6 shadow-sm card-hover animate-slide-up">
+        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <i class="fa fa-microchip text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">点接触晶体管</h3>
+        <p class="text-gray-600">1947年巴丁&布拉顿发明，世界首个半导体放大器件，用锗材料、金箔与回形针制成。</p>
+      </div>
+
+      <div class="bg-neutral rounded-xl p-6 shadow-sm card-hover animate-slide-up" style="animation-delay:0.2s">
+        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <i class="fa fa-microchip text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">结型晶体管</h3>
+        <p class="text-gray-600">肖克利发明，更稳定可靠，成为量产主流，奠定现代晶体管结构基础。</p>
+      </div>
+
+      <div class="bg-neutral rounded-xl p-6 shadow-sm card-hover animate-slide-up" style="animation-delay:0.4s">
+        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <i class="fa fa-microchip text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">集成电路 / 芯片</h3>
+        <p class="text-gray-600">诺伊斯与基尔比发明，将成千上万晶体管集成于单晶硅片，成就现代数字文明。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 历史意义 -->
+<section id="legacy" class="py-16 bg-gradient-to-r from-primary/5 to-secondary/5">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold mb-6">晶体管的历史意义</h2>
+    <div class="max-w-3xl mx-auto text-gray-700 space-y-4 text-lg">
+      <p>📡 <b>取代真空管</b>：体积更小、功耗更低、寿命更长、可靠性飞跃</p>
+      <p>💻 <b>开启数字时代</b>：计算机、手机、互联网、人工智能的硬件基石</p>
+      <p>🌍 <b>催生硅谷</b>：肖克利实验室 → 仙童 → 英特尔 → 全球芯片产业</p>
+      <p>🏆 <b>人类最伟大发明</b>：相当于工业革命的蒸汽机，重塑文明进程</p>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-dark text-white py-8">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-xl font-bold mb-4">半导体器件发展历程</h2>
+    <p class="text-gray-400">基于《创新者》真实历史 · 晶体管与集成电路革命</p>
+    <div class="mt-4 text-sm opacity-60"><i class="fa fa-microchip mr-2"></i>交互式H5历史展示</div>
+  </div>
+</footer>
+
+<script>
+  // 菜单
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  menuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+  // 头像对话
+  function showSpeech(id) {
+    document.querySelectorAll('[id^="speech"]').forEach(item => item.classList.add('hidden'));
+    document.querySelectorAll('.digital-avatar').forEach(av => av.classList.remove('active'));
+    document.getElementById(`speech${id}`).classList.remove('hidden');
+    document.querySelector(`.digital-avatar[onclick="showSpeech(${id})"]`).classList.add('active');
+  }
+
+  // 平滑滚动
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+      mobileMenu.classList.add('hidden');
+    });
+  });
+
+  // 滚动动画
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.animate-slide-up').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'all 0.6s ease-out';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
