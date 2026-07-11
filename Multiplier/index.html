@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双平衡式四象限变跨导模拟乘法器</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 20px;
+        }
+        #globalPauseBtn {
+            position: absolute;
+            right: 0;
+            top: 30px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        #globalPauseBtn.pause {
+            background-color: #444;
+        }
+        #globalPauseBtn.resume {
+            background-color: #28a745;
+        }
+
+        .description {
+            text-indent: 2em;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        .desc {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        p { margin: 6px 0; }
+
+        .switch-btn {
+            padding: 5px 10px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c7dfa;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .switch-btn.active {
+            background-color: #6c757d;
+        }
+
+        .demo-section {
+            margin-top: 0px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .circuit-img {
+            max-width: 75%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 10px;
+        }
+
+        .params {
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+            color: #000;
+            width: 95%;
+        }
+
+        .wave-container {
+            width: 95%;
+            max-width: 700px;
+            position: relative;
+            margin: 12px 0;
+        }
+        .waveCanvas {
+            width: 100%;
+            aspect-ratio: 8/3;
+            background: #fff;
+            border: 1px solid #eee;
+            /* 开启画布抗锯齿 */
+            image-rendering: optimizeQuality;
+        }
+        .wave-label {
+            position: absolute;
+            font-size: 14px;
+        }
+        .ux-label { left: 13%; top: 0; color: blue; }
+        .uy-label { left: 20%; top: 0; color: green; }
+        .uo-label { left: 27%; top: 0; color: red; }
+        .t-label { right: 8%; top: 50%; color: black; }
+        .o-label { left: 5%; top: 50%; color: black; }
+        .divider {
+            width: 98%;
+            height: 1px;
+            background: #ddd;
+            margin: 16px 0;
+        }
+        /* 滑块样式 */
+        .slider-group {
+            width: 95%;
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+        .slider-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 280px;
+        }
+        .slider-item input[type="range"] {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-row">
+        <h1>双平衡式四象限变跨导式模拟乘法器（压控吉尔伯特乘法器）</h1>
+        <button id="globalPauseBtn" class="pause">暂停演示</button>
+    </div>
+
+    <div class="description">
+        基于晶体管非线性特性或吉尔伯特单元等电路结构实现两个模拟信号瞬时值相乘功能。
+        电路由并联的射极差分对$\mathrm{T}_1$、$\mathrm{T}_2$与$\mathrm{T}_3$、$\mathrm{T}_4$，压控电流源$\mathrm{T}_5$、$\mathrm{T}_6$构成，$u_\mathrm{X}$、$u_\mathrm{Y}$可正可负。
+    </div>
+    <img src="images/gilbert_mul.png" alt="双平衡四象限模拟乘法器电路图" class="circuit-img">
+
+    <p class="desc">
+        （1）输入小电压（$u_\mathrm{X} \ll 2U_\mathrm{T}，u_\mathrm{Y} \ll 2U_\mathrm{T}$），输出电压 $u_\mathrm{o}\approx -\frac{i_\mathrm{EE}R_\mathrm{C}}{4U_\mathrm{T}^2}u_\mathrm{X}u_\mathrm{Y}$
+        <button class="switch-btn active" id="linearBtn">关闭演示</button>
+    </p>
+    <div class="demo-section" id="linearDemo">
+        <div class="params">
+            已知$U_\mathrm{T}=26\mathrm{mV}$，$i_\mathrm{EE}=1\mathrm{mA}$，$R_\mathrm{C}=1\mathrm{k\Omega}$
+            <br>输入电压 $u_\mathrm{X}=20\sin(\omega_\mathrm{X}t)\ \mathrm{mV}$，$u_\mathrm{Y}=20\cos(\omega_\mathrm{Y}t)\ \mathrm{mV}$
+        </div>
+        <!-- 频率调节滑块区域 -->
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>$\omega_\mathrm{X}$：</label>
+                <input type="range" id="sliderWx" min="100" max="1000" value="500">
+                <span id="valWx">500</span>
+            </div>
+            <div class="slider-item">
+                <label>$\omega_\mathrm{Y}$：</label>
+                <input type="range" id="sliderWy" min="100" max="1000" value="200">
+                <span id="valWy">200</span>
+            </div>
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="linearCanvas"></canvas>
+            <div class="wave-label ux-label">$u_\mathrm{X}$</div>
+            <div class="wave-label uy-label">$u_\mathrm{Y}$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="desc">
+        （2）输入大电压（$u_\mathrm{X}>2U_\mathrm{T}，u_\mathrm{Y}>2U_\mathrm{T}$），输出电压$u_\mathrm{o}=-i_\mathrm{EE}R_\mathrm{C}\tanh{\frac{u_\mathrm{X}}{2U_\mathrm{T}}}\tanh{\frac{u_\mathrm{Y}}{2U_\mathrm{T}}}$
+        <button class="switch-btn" id="tanhBtn">打开演示</button>
+    </p>
+    <div class="demo-section" id="tanhDemo" style="display:none;">
+        <div class="params">
+            已知$U_\mathrm{T}=26\mathrm{mV}$，$i_\mathrm{EE}=1\mathrm{mA}$，$R_\mathrm{C}=1\mathrm{k\Omega}$
+            <br>输入信号 $u_\mathrm{X}=200\sin(\omega_\mathrm{X}t)\ \mathrm{mV}$，$u_\mathrm{Y}=200\cos(\omega_\mathrm{Y}t)\ \mathrm{mV}$
+        </div>
+        <!-- 新增大电压频率滑块，与小电压共用参数 -->
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>$\omega_\mathrm{X}$：</label>
+                <input type="range" id="sliderWx2" min="100" max="1000" value="500">
+                <span id="valWx2">500</span>
+            </div>
+            <div class="slider-item">
+                <label>$\omega_\mathrm{Y}$：</label>
+                <input type="range" id="sliderWy2" min="100" max="1000" value="200">
+                <span id="valWy2">200</span>
+            </div>
+        </div>
+
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="tanhCanvas"></canvas>
+            <div class="wave-label ux-label">$u_\mathrm{X}$</div>
+            <div class="wave-label uy-label">$u_\mathrm{Y}$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const linearBtn = document.getElementById('linearBtn');
+    const tanhBtn = document.getElementById('tanhBtn');
+    const globalPauseBtn = document.getElementById('globalPauseBtn');
+
+    const linearDemo = document.getElementById('linearDemo');
+    const tanhDemo = document.getElementById('tanhDemo');
+
+    const linCanvas = document.getElementById('linearCanvas');
+    const linCtx = linCanvas.getContext('2d');
+    const tanCanvas = document.getElementById('tanhCanvas');
+    const tanCtx = tanCanvas.getContext('2d');
+
+    // 小电压滑块元素
+    const sliderWx = document.getElementById('sliderWx');
+    const sliderWy = document.getElementById('sliderWy');
+    const valWx = document.getElementById('valWx');
+    const valWy = document.getElementById('valWy');
+
+    // 大电压滑块元素
+    const sliderWx2 = document.getElementById('sliderWx2');
+    const sliderWy2 = document.getElementById('sliderWy2');
+    const valWx2 = document.getElementById('valWx2');
+    const valWy2 = document.getElementById('valWy2');
+
+    // 全局频率变量
+    let wx = 500;
+    let wy = 200;
+
+    // 双向同步滑块：拖动任意一组，两组滑块数值联动
+    function syncSliders() {
+        sliderWx.value = wx;
+        sliderWx2.value = wx;
+        valWx.textContent = wx;
+        valWx2.textContent = wx;
+
+        sliderWy.value = wy;
+        sliderWy2.value = wy;
+        valWy.textContent = wy;
+        valWy2.textContent = wy;
+    }
+
+    // 小电压滑块事件
+    sliderWx.addEventListener('input', function(){
+        wx = Number(this.value);
+        syncSliders();
+    });
+    sliderWy.addEventListener('input', function(){
+        wy = Number(this.value);
+        syncSliders();
+    });
+
+    // 大电压滑块事件
+    sliderWx2.addEventListener('input', function(){
+        wx = Number(this.value);
+        syncSliders();
+    });
+    sliderWy2.addEventListener('input', function(){
+        wy = Number(this.value);
+        syncSliders();
+        });
+
+    const canvasW = 800;
+    const canvasH = 300;
+    linCanvas.width = canvasW; linCanvas.height = canvasH;
+    tanCanvas.width = canvasW; tanCanvas.height = canvasH;
+
+    const axisX = 80;
+    const axisY = canvasH / 2;
+    const timeScale = 5000;
+    const voltScale = 800; // 小信号专用缩放比例
+    const maxScanX = canvasW - 50;
+    const minScanX = 20
+    let scanX = 0;
+    let animationId = null;
+    let isPaused = false;
+
+    // ========== 1. 常量预计算，提升精度 & 减少重复运算 ==========
+    const UT = 0.026;
+    const iEE = 0.001;
+    const RC = 1000;
+    // 拆分系数：先计算大系数，避免极小值相乘
+    const coeffA = -(iEE * RC) / 4;
+    const coeffB = 1 / (UT * UT);
+    const k = coeffA * coeffB;
+
+    function drawAxis(ctx) {
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(minScanX, axisY);
+        ctx.lineTo(maxScanX, axisY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(maxScanX, axisY);
+        ctx.lineTo(maxScanX - 18, axisY - 9);
+        ctx.moveTo(maxScanX, axisY);
+        ctx.lineTo(maxScanX - 18, axisY + 9);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX, canvasH - 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX - 9, 38);
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX + 9, 38);
+        ctx.stroke();
+    }
+
+    function tanh(x) {
+        const expX = Math.exp(x);
+        const expNegX = Math.exp(-x);
+        return (expX - expNegX) / (expX + expNegX);
+    }
+
+    // ========== 2. 优化小信号乘法 ==========
+    function drawLinearWave() {
+        drawAxis(linCtx);
+        linCtx.lineWidth = 2;
+
+        // uX 蓝色
+        linCtx.strokeStyle = '#0066ff';
+        linCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const ux = 0.02 * Math.sin(wx * t);
+            const y = axisY - ux * voltScale;
+            x === 0 ? linCtx.moveTo(x, y) : linCtx.lineTo(x, y);
+        }
+        linCtx.stroke();
+
+        // uY 绿色
+        linCtx.strokeStyle = '#00aa33';
+        linCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uy = 0.02 * Math.cos(wy * t);
+            const y = axisY - uy * voltScale;
+            x === 0 ? linCtx.moveTo(x, y) : linCtx.lineTo(x, y);
+        }
+        linCtx.stroke();
+
+        // uO 红色
+        linCtx.strokeStyle = '#ee2222';
+        linCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const ux = 0.02 * Math.sin(wx * t);
+            const uy = 0.02 * Math.cos(wy * t);
+            let uo = coeffA * ux;
+            uo = uo * uy;
+            uo = uo * coeffB;
+
+            const y = axisY - uo * voltScale;
+            x === 0 ? linCtx.moveTo(x, y) : linCtx.lineTo(x, y);
+        }
+        linCtx.stroke();
+    }
+
+    function drawTanhWave() {
+        // 大信号单独设置缩放比例，解决波形溢出
+        const bigVoltScale = 100;
+        drawAxis(tanCtx);
+        tanCtx.lineWidth = 3;
+
+        // uX 蓝色
+        tanCtx.strokeStyle = '#0066ff';
+        tanCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const ux = 0.2 * Math.sin(wx * t);
+            const y = axisY - ux * bigVoltScale;
+            x === 0 ? tanCtx.moveTo(x, y) : tanCtx.lineTo(x, y);
+        }
+        tanCtx.stroke();
+
+        // uY 绿色
+        tanCtx.strokeStyle = '#00aa33';
+        tanCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uy = 0.2 * Math.cos(wy * t);
+            const y = axisY - uy * bigVoltScale;
+            x === 0 ? tanCtx.moveTo(x, y) : tanCtx.lineTo(x, y);
+        }
+        tanCtx.stroke();
+
+        // uO 红色
+        tanCtx.strokeStyle = '#ee2222';
+        tanCtx.beginPath();
+        for(let x = 0; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const ux = 0.2 * Math.sin(wx * t);
+            const uy = 0.2 * Math.cos(wy * t);
+            const diffI = iEE * tanh(ux/(2*UT)) * tanh(uy/(2*UT));
+            const uo = -diffI * RC;
+            const y = axisY - uo * bigVoltScale;
+            x === 0 ? tanCtx.moveTo(x, y) : tanCtx.lineTo(x, y);
+        }
+        tanCtx.stroke();
+    }
+
+    // ========== 3. 整数步长，消除采样抖动 ==========
+    function animate() {
+        if (!isPaused) {
+            scanX += 2; // 改为整数步长，无浮点采样误差
+            if (scanX > maxScanX) scanX = 0;
+        }
+        if (linearDemo.style.display !== 'none') drawLinearWave();
+        if (tanhDemo.style.display !== 'none') drawTanhWave();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    globalPauseBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+            globalPauseBtn.className = 'resume';
+            globalPauseBtn.textContent = '恢复演示';
+        } else {
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    });
+
+    function autoResumePlay() {
+        if (isPaused) {
+            isPaused = false;
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+        scanX = 0;
+    }
+
+    linearBtn.addEventListener('click', function() {
+        if (linearBtn.classList.contains('active')) {
+            linearBtn.classList.remove('active');
+            linearBtn.textContent = '打开演示';
+            linearDemo.style.display = 'none';
+        } else {
+            autoResumePlay();
+            linearBtn.classList.add('active');
+            linearBtn.textContent = '关闭演示';
+            tanhBtn.classList.remove('active');
+            tanhBtn.textContent = '打开演示';
+            tanhDemo.style.display = 'none';
+            linearDemo.style.display = 'flex';
+        }
+    });
+
+    tanhBtn.addEventListener('click', function() {
+        if (tanhBtn.classList.contains('active')) {
+            tanhBtn.classList.remove('active');
+            tanhBtn.textContent = '打开演示';
+            tanhDemo.style.display = 'none';
+        } else {
+            autoResumePlay();
+            tanhBtn.classList.add('active');
+            tanhBtn.textContent = '关闭演示';
+            linearBtn.classList.remove('active');
+            linearBtn.textContent = '打开演示';
+            linearDemo.style.display = 'none';
+            tanhDemo.style.display = 'flex';
+        }
+    });
+
+    animate();
+</script>
+</body>
+</html>
