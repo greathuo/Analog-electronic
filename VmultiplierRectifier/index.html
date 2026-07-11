@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倍压整流电路交互演示</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            padding: 30px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            background: #f9fafc;
+        }
+        .title-row {
+            position: relative;
+            width: 100%;
+            height: 32px;
+            line-height: 32px;
+            margin-bottom: 0px;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            font-size: 22px;
+        }
+        #pauseBtn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            padding: 6px 9px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        #pauseBtn.running {
+            background: #28a745;
+        }
+        #pauseBtn.paused {
+            background: #6c757d;
+        }
+        /* 已移除白色背景、边框、圆角 */
+        .desc-block {
+            padding: 16px;
+            margin-bottom: 0px;
+        }
+        .description {
+            text-indent: 2em;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        .circuit-img {
+            max-width: 100%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 0px;
+        }
+        /* 已移除白色背景、边框、圆角 */
+        .slider-container {
+            margin: 0px auto;
+            max-width: 550px;
+            text-align: center;
+            font-size: 14px;
+            padding: 12px;
+        }
+        .slider-container label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        input[type="range"] {
+            width: 85%;
+            margin: 10px 0;
+        }
+        .tip-text {
+            color: #0066cc;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+        /* 已移除白色背景、边框、圆角 */
+        .waveform-container {
+            margin-top: 15px;
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+        }
+        .waveCanvas {
+            width: 100%;
+            aspect-ratio: 4 / 4;
+            background: #fff;
+            border: 1px solid #eee;
+            image-rendering: optimizeQuality;
+        }
+        .math-label {
+            position: absolute;
+            font-size: 14px;
+        }
+        .label-u2 { left: 12%; top: 2%; }
+        .label-uc1 { left: 12%; top: 21%; }
+        .label-uo { left: 12%; top: 42%; }
+        .label-t { left: 88%; top: 15%; }
+        .label-t1 { left: 88%; top: 36%; }
+        .label-t2 { left: 88%; top: 64%; }
+        .label-sqrtU2-dash {
+            position: absolute;
+            left: 2px;
+            font-size: 12px;
+            pointer-events: none;
+            color: #666;
+        }
+        .label-sqrtU2-line {
+            position: absolute;
+            left: 2px;
+            font-size: 12px;
+            pointer-events: none;
+            color: #0066cc;
+            font-weight: 500;
+        }
+        .label-2sqrtU2-line {
+            position: absolute;
+            left: -3px;
+            font-size: 12px;
+            pointer-events: none;
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .num-bold {
+            font-size: 16px;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-row">
+        <h1>倍压整流电路</h1>
+        <button id="pauseBtn" class="running">暂停波形动画</button>
+    </div>
+
+    <div class="desc-block">
+        <div class="description">
+            利用滤波电容对电荷的存储作用，由多个电容和二极管可获得几倍于变压器副边电压的直流电压。
+        </div>
+        <img src="images/circuits.png" alt="倍压整流电路" class="circuit-img">
+    </div>
+
+    <div class="slider-container">
+        <label>变压器副边电压峰值$\sqrt{2}U_2$：<span id="topAmpVal" class="num-bold">24</span>$\mathrm{V}$
+        <br><br><span id="ampTip" class="tip-text"></span></label>
+        <input type="range" id="ampSlider" min="9" max="48" step="1" value="24">
+    </div>
+
+    <div class="waveform-container">
+        <div class="math-label label-u2">$u_2$</div>
+        <div class="math-label label-uc1">$U_\mathrm{C1}$</div>
+        <div class="math-label label-uo">$U_\mathrm{C2}$</div>
+        <div class="math-label label-t">$t$</div>
+        <div class="math-label label-t1">$t$</div>
+        <div class="math-label label-t2">$t$</div>
+        <div id="sqrtU2DashLabel" class="label-sqrtU2-dash">$\sqrt{2}U_2$</div>
+        <div id="sqrtU2LineLabel" class="label-sqrtU2-line">$\sqrt{2}U_2$</div>
+        <div id="twoSqrtU2LineLabel" class="label-2sqrtU2-line">$2\sqrt{2}U_2$</div>
+        <canvas class="waveCanvas" id="waveCanvas"></canvas>
+    </div>
+
+<script>
+// 使用 IIFE 隔离全局变量，防止命名污染
+(function(){
+    // DOM 元素
+    const ampSlider = document.getElementById('ampSlider');
+    const topAmpVal = document.getElementById('topAmpVal');
+    const ampTip = document.getElementById('ampTip');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const sqrtU2DashLabel = document.getElementById('sqrtU2DashLabel');
+    const sqrtU2LineLabel = document.getElementById('sqrtU2LineLabel');
+    const twoSqrtU2LineLabel = document.getElementById('twoSqrtU2LineLabel');
+
+    // 画布基础配置
+    const canvasW = 700;
+    const canvasH = 480;
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+
+    // 坐标轴参数
+    const axisX = 60;
+    const baseY1 = 55;
+    const baseY2 = 165;
+    const baseY3 = 310;
+    const maxScanX = 650;
+    let scanX = 0;
+    const step = 2;
+
+    // 动画与状态
+    let isPaused = false;
+    let animationId = null;
+    let peakAmp = 24;
+    let prevAmp = peakAmp;
+    const timeScale = 400;
+    const maxVolt = 48;
+    const minVolt = 9;
+
+    // 初始化默认提示文案
+    ampTip.textContent = "拖动滑块可改变电压峰值";
+
+    // 绘制箭头
+    function drawArrow(ctx, fromX, fromY, toX, toY, size=10) {
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const angle = Math.atan2(dy, dx);
+        ctx.save();
+        ctx.translate(toX, toY);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-size, -size*0.5);
+        ctx.lineTo(-size,  size*0.5);
+        ctx.closePath();
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // 绘制坐标轴、网格、虚线
+    function drawAxisAndGrid() {
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000';
+
+        // u2 坐标轴
+        ctx.beginPath();
+        ctx.moveTo(axisX, 100);
+        ctx.lineTo(axisX, 10);
+        ctx.stroke();
+        drawArrow(ctx, axisX, 100, axisX, 10, 10);
+
+        ctx.beginPath();
+        ctx.moveTo(axisX, baseY1);
+        ctx.lineTo(maxScanX, baseY1);
+        ctx.stroke();
+        drawArrow(ctx, axisX, baseY1, maxScanX, baseY1, 10);
+
+        // UC1 坐标轴
+        ctx.beginPath();
+        ctx.moveTo(axisX, 180);
+        ctx.lineTo(axisX, 110);
+        ctx.stroke();
+        drawArrow(ctx, axisX, 180, axisX, 110, 10);
+
+        ctx.beginPath();
+        ctx.moveTo(axisX, baseY2);
+        ctx.lineTo(maxScanX, baseY2);
+        ctx.stroke();
+        drawArrow(ctx, axisX, baseY2, maxScanX, baseY2, 10);
+
+        // UC2 坐标轴
+        ctx.beginPath();
+        ctx.moveTo(axisX, 350);
+        ctx.lineTo(axisX, 220);
+        ctx.stroke();
+        drawArrow(ctx, axisX, 340, axisX, 220, 10);
+
+        ctx.beginPath();
+        ctx.moveTo(axisX, baseY3);
+        ctx.lineTo(maxScanX, baseY3);
+        ctx.stroke();
+        drawArrow(ctx, axisX, baseY3, maxScanX, baseY3, 10);
+
+        // u2 峰值虚线
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#888';
+        ctx.setLineDash([4, 2]);
+        const u2DashY = baseY1 - (peakAmp / maxVolt) * 40;
+        sqrtU2DashLabel.style.top = (u2DashY - 8) + 'px';
+
+        ctx.beginPath();
+        ctx.moveTo(axisX, u2DashY);
+        ctx.lineTo(maxScanX, u2DashY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // 绘制 u2 正弦波
+    function drawWaveU2() {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#000';
+        const scale = peakAmp / maxVolt * 40;
+        ctx.beginPath();
+        for(let x = axisX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const rad = Math.PI * 2 * t;
+            const y = baseY1 - scale * Math.sin(rad);
+            x === axisX ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // 绘制 UC1 直流电平
+    function drawWaveUC1() {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#0066cc';
+        const scale = peakAmp / maxVolt * 38;
+        const fixedY = baseY2 - scale;
+        sqrtU2LineLabel.style.top = (fixedY - 42) + 'px';
+
+        ctx.beginPath();
+        for(let x = axisX; x <= scanX; x++) {
+            x === axisX ? ctx.moveTo(x, fixedY) : ctx.lineTo(x, fixedY);
+        }
+        ctx.stroke();
+    }
+
+    // 绘制 UC2 二倍压直流电平
+    function drawWaveUC2() {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#dc3545';
+        const scale = peakAmp / maxVolt * 76;
+        const fixedY = baseY3 - scale;
+        twoSqrtU2LineLabel.style.top = (fixedY - 76) + 'px';
+
+        ctx.beginPath();
+        for(let x = axisX; x <= scanX; x++) {
+            x === axisX ? ctx.moveTo(x, fixedY) : ctx.lineTo(x, fixedY);
+        }
+        ctx.stroke();
+    }
+
+    // 统一绘制入口
+    function drawAll() {
+        drawAxisAndGrid();
+        drawWaveU2();
+        drawWaveUC1();
+        drawWaveUC2();
+    }
+
+    // 动画循环
+    function animate() {
+        if(!isPaused) {
+            scanX += step;
+            if(scanX > maxScanX) scanX = axisX;
+        }
+        drawAll();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // 暂停/播放切换
+    function togglePause() {
+        isPaused = !isPaused;
+        if(isPaused) {
+            pauseBtn.textContent = "恢复波形动画";
+            pauseBtn.className = "paused";
+        } else {
+            pauseBtn.textContent = "暂停波形动画";
+            pauseBtn.className = "running";
+        }
+    }
+
+    // 滑块拖动事件（完善判断、容错、极值提示）
+    ampSlider.addEventListener('input', () => {
+        const val = Number(ampSlider.value);
+        // 数值容错：非数字直接返回
+        if (isNaN(val)) return;
+
+        peakAmp = val;
+        topAmpVal.textContent = peakAmp;
+
+        // 极值判断
+        if (peakAmp <= minVolt) {
+            ampTip.textContent = "已达到最小峰值";
+        } else if (peakAmp >= maxVolt) {
+            ampTip.textContent = "已达到最大峰值";
+        } else if (peakAmp > prevAmp) {
+            ampTip.textContent = "峰值增大，输出二倍压幅值同步升高";
+        } else if (peakAmp < prevAmp) {
+            ampTip.textContent = "峰值减小，输出二倍压幅值同步降低";
+        } else {
+            // 数值无变化，清空提示
+            ampTip.textContent = "";
+        }
+
+        prevAmp = peakAmp;
+    });
+
+    pauseBtn.addEventListener('click', togglePause);
+
+    // 页面卸载，销毁动画，防止内存泄漏
+    window.addEventListener('beforeunload', () => {
+        cancelAnimationFrame(animationId);
+    });
+
+    // 页面初始化
+    window.addEventListener('load', () => {
+        animate();
+        setTimeout(() => MathJax.typeset(), 120);
+    });
+})();
+</script>
+</body>
+</html>
