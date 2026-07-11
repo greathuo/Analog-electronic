@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟乘法器幅度调制与解调交互演示</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            font-size: 22px;
+        }
+        #globalPauseBtn {
+            position: absolute;
+            right: 0;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        #globalPauseBtn.pause {
+            background-color: #444;
+        }
+        #globalPauseBtn.resume {
+            background-color: #28a745;
+        }
+
+        .description {
+            text-indent: 2em;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+        .desc-block {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin: 12px 0;
+            padding: 8px 12px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+        p { margin: 8px 0; }
+
+        .switch-btn {
+            padding: 6px 12px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c7dfa;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .switch-btn.active {
+            background-color: #6c757d;
+        }
+
+        .demo-section {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            padding: 14px;
+            border-radius: 8px;
+        }
+
+        .circuit-img {
+            max-width: 100%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+            margin: 0 auto 12px;
+        }
+
+        .circuit-imgAM {
+            max-width: 60%;
+            height: auto;
+            border: none;
+            background: transparent;
+            outline: none;
+            display: block;
+            margin: 0 auto 12px;
+        }
+        .params {
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+            color: #000;
+            width: 95%;
+        }
+
+        .wave-container {
+            width: 95%;
+            max-width: 800px;
+            position: relative;
+            margin: 14px 0;
+        }
+        .waveCanvas {
+            width: 100%;
+            height: 150px;
+            background: #fff;
+            border: 1px solid #eee;
+            image-rendering: optimizeQuality;
+        }
+        .wave-label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .us-label { left: 10%; top: 0; color: #0066ff; }
+        .uc-label { left: 20%; top: 0; color: #00aa33; }
+        .uo-label { left: 30%; top: 0; color: #ee2222; }
+        .ssb-label { left: 38%; top: 0; color: #9932cc; }
+        .t-label { right: 8%; top: 50%; color: black; }
+        .o-label { left: 5%; top: 50%; color: black; }
+        .divider {
+            width: 98%;
+            height: 1px;
+            background: #ddd;
+            margin: 24px 0;
+        }
+        .slider-group {
+            width: 95%;
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+        .slider-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 280px;
+        }
+        .slider-item input[type="range"] {
+            flex: 1;
+        }
+        .tip-text {
+            font-size: 13px;
+            color: #666;
+            width: 95%;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-row">
+        <h1>幅度调制与同步解调</h1>
+        <button id="globalPauseBtn" class="pause">暂停演示</button>
+    </div>
+    <!-- AM模块 默认打开演示 -->
+    <p class="desc-block">
+        （1）幅度调制AM：利用低频基带调制信号控制高频载波幅度，将信息加载至高频载波传输。
+        <img src="\images\AMmodulation.png" alt="调幅电路示意图" class="circuit-imgAM">
+        <button class="switch-btn active" id="amBtn">关闭演示</button>
+    </p>
+    <div class="demo-section" id="amDemo" style="display:flex;">
+        <div class="params">
+            调制信号：$u_\mathrm{s}=U_\mathrm{s}\cos2\pi f_\mathrm{s}t$
+            <br>载波信号：$u_\mathrm{c}=U_\mathrm{c}\cos2\pi f_\mathrm{c}t$，满足 $f_\mathrm{s}< f_\mathrm{c}$
+        </div>
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>$f_\mathrm{s} (\mathrm{kHz})$：</label>
+                <input type="range" id="sliderWs" min="1" max="10" value="5">
+                <span id="valWs">5</span>
+            </div>
+            <div class="slider-item">
+                <label>$f_\mathrm{c} (\mathrm{kHz})$：</label>
+                <input type="range" id="sliderWc" min="50" max="100" value="75">
+                <span id="valWc">75</span>
+            </div>
+        </div>
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="amCanvas"></canvas>
+            <div class="wave-label us-label">$u_\mathrm{s}$</div>
+            <div class="wave-label uc-label">$u_\mathrm{c}$</div>
+            <div class="wave-label uo-label">$u_\mathrm{AM}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="wave-label o-label">$O$</div>
+        </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- 解调模块：频率范围、初始值与调制区完全一致 -->
+    <p class="desc-block">
+        （2）同步解调：利用乘法器与低通滤波器从调幅信号恢复原始基带信号。
+        <img src="\images\AMdemodulation.png" alt="解调电路示意图" class="circuit-img">
+        <button class="switch-btn" id="demodBtn">打开演示</button>
+    </p>
+    <div class="demo-section" id="demodDemo" style="display:none;">
+        <div class="params">
+            输入调幅信号：$u_\mathrm{AM}=(1+\cos2\pi f_\mathrm{s}t)\cos2\pi f_\mathrm{c}t$
+            <br>本地同步载波：$u_\mathrm{c}=\cos2\pi f_\mathrm{c}t$
+        </div>
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>$f_\mathrm{s} (\mathrm{kHz})$：</label>
+                <!-- 取值范围、初始值 和 调制区保持一致 -->
+                <input type="range" id="sliderWs3" min="1" max="10" value="5">
+                <span id="valWs3">5</span>
+            </div>
+            <div class="slider-item">
+                <label>$f_\mathrm{c} (\mathrm{kHz})$：</label>
+                <!-- 取值范围、初始值 和 调制区保持一致 -->
+                <input type="range" id="sliderWc3" min="50" max="100" value="75">
+                <span id="valWc3">75</span>
+            </div>
+        </div>
+        <div class="wave-container">
+            <canvas class="waveCanvas" id="demodCanvas"></canvas>
+            <div class="wave-label us-label">$u_\mathrm{AM}$</div>
+            <div class="wave-label uc-label">$u_\mathrm{c}$</div>
+            <div class="wave-label uo-label">$u_\mathrm{o}$</div>
+            <div class="wave-label t-label">$t$</div>
+            <div class="o-label">$O$</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM 元素
+    const amBtn = document.getElementById('amBtn');
+    const demodBtn = document.getElementById('demodBtn');
+    const globalPauseBtn = document.getElementById('globalPauseBtn');
+
+    const amDemo = document.getElementById('amDemo');
+    const demodDemo = document.getElementById('demodDemo');
+
+    const amCanvas = document.getElementById('amCanvas');
+    const amCtx = amCanvas.getContext('2d');
+    const demodCanvas = document.getElementById('demodCanvas');
+    const demodCtx = demodCanvas.getContext('2d');
+
+    // 滑块
+    const sliderWs = document.getElementById('sliderWs');
+    const sliderWc = document.getElementById('sliderWc');
+    const valWs = document.getElementById('valWs');
+    const valWc = document.getElementById('valWc');
+
+    const sliderWs3 = document.getElementById('sliderWs3');
+    const sliderWc3 = document.getElementById('sliderWc3');
+    const valWs3 = document.getElementById('valWs3');
+    const valWc3 = document.getElementById('valWc3');
+
+    // 频率初始值（与调制区统一）
+    let fs = 5 * 1000;
+    let fc = 75 * 1000;
+    const kMul = 0.8;
+    const ssbColor = '#9932cc';
+
+    // 画布固定尺寸
+    const canvasW = 1000;
+    const canvasH = 300;
+    [amCanvas, demodCanvas].forEach(canvas => {
+        canvas.width = canvasW;
+        canvas.height = canvasH;
+    });
+
+    // 坐标系参数
+    const axisX = 80;
+    const axisY = canvasH / 2;
+    const timeScale = 3000000;
+    const voltScale = 100;
+    const maxScanX = canvasW - 50;
+    const minScanX = 20;
+    let scanX = minScanX;
+
+    let animationId = null;
+    let isPaused = false;
+
+    // 滑块双向同步 + 单位换算 Hz ↔ kHz
+    function syncAllSliders() {
+        const fsKhz = fs / 1000;
+        const fcKhz = fc / 1000;
+
+        sliderWs.value = fsKhz;
+        sliderWs3.value = fsKhz;
+        sliderWc.value = fcKhz;
+        sliderWc3.value = fcKhz;
+
+        valWs.textContent = fsKhz;
+        valWs3.textContent = fsKhz;
+        valWc.textContent = fcKhz;
+        valWc3.textContent = fcKhz;
+    }
+
+    // 滑块事件  kHz -> Hz 换算
+    [sliderWs, sliderWs3].forEach(slider => {
+        slider.addEventListener('input', () => {
+            const khzVal = Number(slider.value);
+            fs = khzVal * 1000;
+            syncAllSliders();
+            resetWavePlay();
+        })
+    });
+    [sliderWc, sliderWc3].forEach(slider => {
+        slider.addEventListener('input', () => {
+            const khzVal = Number(slider.value);
+            fc = khzVal * 1000;
+            syncAllSliders();
+            resetWavePlay();
+        })
+    });
+
+    // 绘制坐标轴
+    function drawAxis(ctx) {
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(minScanX, axisY);
+        ctx.lineTo(maxScanX, axisY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(maxScanX, axisY);
+        ctx.lineTo(maxScanX - 18, axisY - 9);
+        ctx.moveTo(maxScanX, axisY);
+        ctx.lineTo(maxScanX - 18, axisY + 9);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX, canvasH - 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX - 9, 38);
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX + 9, 38);
+        ctx.stroke();
+    }
+
+    // 绘制 AM 波形：基带、载波、AM调幅、SSB
+    function drawAMWave() {
+        drawAxis(amCtx);
+        const PI = Math.PI;
+
+        // 1. 基带信号 us 蓝色
+        amCtx.lineWidth = 2;
+        amCtx.strokeStyle = '#0066ff';
+        amCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const us = Math.cos(2 * PI * fs * t);
+            const y = axisY - us * voltScale;
+            x === minScanX ? amCtx.moveTo(x, y) : amCtx.lineTo(x, y);
+        }
+        amCtx.stroke();
+
+        // 2. 载波 uc 绿色
+        amCtx.strokeStyle = '#00aa33';
+        amCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uc = Math.cos(2 * PI * fc * t);
+            const y = axisY - uc * voltScale;
+            x === minScanX ? amCtx.moveTo(x, y) : amCtx.lineTo(x, y);
+        }
+        amCtx.stroke();
+
+        // 3. AM 调幅输出 红色
+        amCtx.lineWidth = 5;
+        amCtx.strokeStyle = '#ee2222';
+        amCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const us = Math.cos(2 * PI * fs * t);
+            const uc = Math.cos(2 * PI * fc * t);
+            const uo = kMul * (1 + 0.5 * us) * uc;
+            const y = axisY - uo * voltScale;
+            x === minScanX ? amCtx.moveTo(x, y) : amCtx.lineTo(x, y);
+        }
+        amCtx.stroke();
+
+        amCtx.stroke();
+        amCtx.lineWidth = 2;
+    }
+
+    // 同步解调波形（所有波形幅度统一调小）
+    function drawDemodWave() {
+        drawAxis(demodCtx);
+        const PI = Math.PI;
+        const demodAmp = 0.8; // 解调区域整体幅度缩放系数
+
+        // 1. 蓝色：输入 AM 调幅波 u_AM
+        demodCtx.lineWidth = 2;
+        demodCtx.strokeStyle = '#0066ff';
+        demodCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uc = Math.cos(2 * PI * fc * t);
+            const us = Math.cos(2 * PI * fs * t);
+            const uAM = (1 + 0.5 * us) * uc * demodAmp;
+            const y = axisY - uAM * voltScale;
+            x === minScanX ? demodCtx.moveTo(x, y) : demodCtx.lineTo(x, y);
+        }
+        demodCtx.stroke();
+
+        // 2. 绿色：本地同步载波 u_c
+        demodCtx.strokeStyle = '#00aa33';
+        demodCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uc = Math.cos(2 * PI * fc * t) * demodAmp;
+            const y = axisY - uc * voltScale;
+            x === minScanX ? demodCtx.moveTo(x, y) : demodCtx.lineTo(x, y);
+        }
+        demodCtx.stroke();
+
+        // 3. 红色：乘法+低通滤波后 解调输出 u_o（还原基带）
+        demodCtx.lineWidth = 4;
+        demodCtx.strokeStyle = '#ee2222';
+        demodCtx.beginPath();
+        for (let x = minScanX; x <= scanX; x++) {
+            const t = (x - axisX) / timeScale;
+            const uOut = 0.25 * Math.cos(2 * PI * fs * t) * demodAmp;
+            const y = axisY - uOut * voltScale;
+            x === minScanX ? demodCtx.moveTo(x, y) : demodCtx.lineTo(x, y);
+        }
+        demodCtx.stroke();
+        demodCtx.lineWidth = 2;
+    }
+
+    // 重置波形播放起点
+    function resetWavePlay() {
+        isPaused = false;
+        globalPauseBtn.className = 'pause';
+        globalPauseBtn.textContent = '暂停演示';
+        scanX = minScanX;
+    }
+
+    // 动画主循环
+    function animate() {
+        if (!isPaused) {
+            scanX += 1.5;
+            if (scanX > maxScanX) {
+                scanX = minScanX;
+            }
+        }
+        if (amDemo.style.display !== 'none') drawAMWave();
+        if (demodDemo.style.display !== 'none') drawDemodWave();
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // 全局暂停
+    globalPauseBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+            globalPauseBtn.className = 'resume';
+            globalPauseBtn.textContent = '恢复演示';
+        } else {
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    });
+
+    // 面板切换事件
+    amBtn.addEventListener('click', function () {
+        if (this.classList.contains('active')) {
+            this.classList.remove('active');
+            this.textContent = '打开演示';
+            amDemo.style.display = 'none';
+        } else {
+            resetWavePlay();
+            this.classList.add('active');
+            this.textContent = '关闭演示';
+            demodBtn.classList.remove('active');
+            demodBtn.textContent = '打开演示';
+            demodDemo.style.display = 'none';
+            amDemo.style.display = 'flex';
+        }
+    });
+
+    demodBtn.addEventListener('click', function () {
+        if (this.classList.contains('active')) {
+            this.classList.remove('active');
+            this.textContent = '打开演示';
+            demodDemo.style.display = 'none';
+        } else {
+            resetWavePlay();
+            this.classList.add('active');
+            this.textContent = '关闭演示';
+            amBtn.classList.remove('active');
+            amBtn.textContent = '打开演示';
+            amDemo.style.display = 'none';
+            demodDemo.style.display = 'flex';
+        }
+    });
+
+    // 页面初始化
+    syncAllSliders();
+    animate();
+</script>
+</body>
+</html>
