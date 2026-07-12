@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开关稳压电源交互演示</title>
+    <!-- 替换国内可访问MathJax CDN -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            font-size: 22px;
+        }
+        #globalPauseBtn {
+            position: absolute;
+            right: 0;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+        }
+        #globalPauseBtn.pause {
+            background-color: #444;
+        }
+        #globalPauseBtn.resume {
+            background-color: #28a745;
+        }
+
+        .description {
+            text-indent: 2em;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+        .circuit-wrap {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #444;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+        p { margin: 8px 0; }
+
+        .switch-btn {
+            padding: 6px 12px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c7dfa;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .switch-btn.active {
+            background-color: #6c757d;
+        }
+
+        .demo-section {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .circuit-img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .circuit-img1 {
+            display: block;
+            max-width: 75%;
+            height: auto;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .circuit-txt {
+            width: 95%;
+            padding: 10px;
+            background: #fff;
+            border:1px solid #ddd;
+            font-family: Consolas;
+            font-size:13px;
+            white-space: pre-wrap;
+            margin: 0 auto 12px;
+        }
+        .params {
+            font-size: 14px;
+            line-height: 1.8;
+            text-align: left;
+            color: #000;
+            width: 95%;
+        }
+
+        .wave-container {
+            width: 95%;
+            max-width: 800px;
+            position: relative;
+            margin: 14px 0;
+        }
+        .waveCanvas {
+            width: 100%;
+            height: 100px;
+            background: #fff;
+            border: 1px solid #eee;
+            image-rendering: optimizeQuality;
+        }
+        .multi-wave-canvas {
+            height: 100px !important;
+        }
+        .wave-label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .ui-label { left: 8%; top: 0; color: #0066ff; }
+        .pulse-label { left: 18%; top: 0; color: #00aa33; }
+        .uo-label { left: 28%; top: 0; color: #ee2222; }
+        .t-label { right: 8%; top: 50%; color: black; }
+        .o-label { left: 5%; top: 50%; color: black; }
+        .divider {
+            width: 98%;
+            height: 1px;
+            background: #ddd;
+            margin: 24px 0;
+        }
+        .slider-group {
+            width: 95%;
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+        .slider-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 280px;
+        }
+        .slider-item input[type="range"] {
+            flex: 1;
+        }
+        .tip-text {
+            font-size: 13px;
+            color: #666;
+            width: 95%;
+        }
+        .knowledge-box{
+            background:#eef6ff;
+            padding:12px;
+            border-radius:6px;
+            margin:10px 0;
+        }
+        .pwm-math-label {
+            position: absolute;
+            font-size: 10px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        .label-un2 { top: 0px; left: 35px; color: #0066ff; }
+        .label-ub  { top: 0px; left: 60px; color: #00aa33; }
+        .label-uo  { top: 0px; left: 85px; color: #ee2222; }
+        /* 并联电源波形标签 */
+        .label-il  { top: 0px; left: 35px; color: #0066ff; }
+        .label-ug  { top: 0px; left: 60px; color: #00aa33; }
+        .label-uop { top: 0px; left: 85px; color: #ee2222; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title-row">
+        <h1>开关稳压电源</h1>
+        <button id="globalPauseBtn" class="pause">暂停演示</button>
+    </div>
+
+    <!-- 第一部分：串联型开关稳压电源 -->
+    <div class="circuit-wrap">
+        <p>
+            （1）串联型开关稳压电源：开关管与负载串联，输出电压恒小于输入电压，采用PWM脉宽调制稳压，$U_\mathrm{O}=\delta U_\mathrm{I}$。
+            <img src="images/series.png" alt="串联开关电源原理图" class="circuit-img">
+        </p>
+        <p>
+            <button class="switch-btn active" id="seriesBtn">关闭演示</button>
+        </p>
+
+        <div class="demo-section" id="seriesDemo" style="display:flex;">
+            <div class="slider-group">
+                <div class="slider-item">
+                    <label>$U_\mathrm{I}$：</label>
+                    <input type="range" id="sliderUi" min="30" max="150" value="100">
+                    <span id="valUi">10.0</span> V
+                </div>
+                <div class="slider-item">
+                    <label>$\ \ \delta$：</label>
+                    <input type="range" id="sliderDelta" min="30" max="90" value="60">
+                    <span id="valDelta">0.60</span>
+                </div>
+            </div>
+            <div class="wave-container">
+                <div class="pwm-math-label label-un2">$U_\mathrm{N2}$</div>
+                <div class="pwm-math-label label-ub">$U_\mathrm{B}$</div>
+                <div class="pwm-math-label label-uo">$U_\mathrm{O}$</div>
+                <canvas class="waveCanvas multi-wave-canvas" id="seriesCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 第二部分：并联型开关稳压电源 -->
+    <div class="circuit-wrap">
+        <p>
+            （2）并联型开关稳压电源：开关管与负载并联，电感储能升压，输出电压恒大于输入电压，$U_\mathrm{O} = U_\mathrm{I}/(1-\delta)$。
+            <img src="images/parallel.png" alt="并联开关电源原理图" class="circuit-img1">
+        </p>
+        <p>
+            <button class="switch-btn" id="parallelBtn">打开演示</button>
+        </p>
+
+        <div class="demo-section" id="parallelDemo" style="display:none;">
+            <div class="slider-group">
+                <div class="slider-item">
+                    <label>$U_\mathrm{I}$：</label>
+                    <input type="range" id="sliderUiPar" min="10" max="40" value="20">
+                    <span id="valUiPar">2.0</span> V
+                </div>
+                <div class="slider-item">
+                    <label>$\ \ \delta$：</label>
+                    <input type="range" id="sliderDeltaPar" min="20" max="70" value="40">
+                    <span id="valDeltaPar">0.40</span>
+                </div>
+            </div>
+            <div class="wave-container">
+                <div class="pwm-math-label label-il">$i_\mathrm{L}$</div>
+                <div class="pwm-math-label label-ug">$u_\mathrm{G}$</div>
+                <div class="pwm-math-label label-uop">$U_\mathrm{O}$</div>
+                <canvas class="waveCanvas multi-wave-canvas" id="parallelCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 全局控制
+    const globalPauseBtn = document.getElementById('globalPauseBtn');
+    let isPaused = false;
+    let animationId = null;
+
+    // 通用画布基础配置
+    const canvasW = 1000;
+    const canvasH = 300;
+    const pwmCanvasH = 280;
+    const axisX = 80;
+    const timeScale = 120;
+    const voltScale = 70;
+    const maxScanX = canvasW - 50;
+    const minScanX = 20;
+    const period = 0.5;
+
+    // 绘制坐标轴 通用函数
+    function drawAxis(ctx, h, yCenter) {
+        ctx.clearRect(0, 0, canvasW, h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(minScanX, yCenter);
+        ctx.lineTo(maxScanX, yCenter);
+        ctx.stroke();
+        const arrowSize = 12;
+        ctx.beginPath();
+        ctx.moveTo(maxScanX, yCenter);
+        ctx.lineTo(maxScanX - arrowSize, yCenter - arrowSize / 2);
+        ctx.lineTo(maxScanX - arrowSize, yCenter + arrowSize / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX, h - 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(axisX, 20);
+        ctx.lineTo(axisX - arrowSize / 2, 20 + arrowSize);
+        ctx.lineTo(axisX + arrowSize / 2, 20 + arrowSize);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // ===================== 串联型电源 =====================
+    const seriesBtn = document.getElementById('seriesBtn');
+    const seriesDemo = document.getElementById('seriesDemo');
+    const seriesCanvas = document.getElementById('seriesCanvas');
+    const seriesCtx = seriesCanvas.getContext('2d');
+    seriesCanvas.width = canvasW;
+    seriesCanvas.height = pwmCanvasH;
+    const seriesAxisY = pwmCanvasH / 2;
+    let seriesScanX = minScanX;
+
+    let U_I = 10.0;
+    let delta = 0.6;
+
+    const sliderUi = document.getElementById('sliderUi');
+    const sliderDelta = document.getElementById('sliderDelta');
+    const valUi = document.getElementById('valUi');
+    const valDelta = document.getElementById('valDelta');
+
+    function syncSeriesText(){
+        valUi.textContent = U_I.toFixed(1);
+        valDelta.textContent = delta.toFixed(2);
+    }
+
+    sliderUi.addEventListener('input', () => {
+        U_I = Number(sliderUi.value) / 10;
+        syncSeriesText();
+        seriesScanX = minScanX;
+    });
+    sliderDelta.addEventListener('input', () => {
+        delta = Number(sliderDelta.value) / 100;
+        syncSeriesText();
+        seriesScanX = minScanX;
+    });
+
+    function drawSeriesWave(){
+        drawAxis(seriesCtx, pwmCanvasH, seriesAxisY);
+        const baseVal = U_I * delta;
+        const triAmp = 4;
+        seriesCtx.lineWidth = 2;
+
+        // 蓝色三角波
+        seriesCtx.strokeStyle = '#0066ff';
+        seriesCtx.beginPath();
+        for (let x = minScanX; x <= seriesScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 4) % period;
+            let tri;
+            if(phase < period/2){
+                tri = -triAmp + (4 * triAmp / period) * phase;
+            }else{
+                tri = triAmp - (4 * triAmp / period) * (phase - period/2);
+            }
+            let y = seriesAxisY - tri * voltScale / 10;
+            x === minScanX ? seriesCtx.moveTo(x, y) : seriesCtx.lineTo(x, y);
+        }
+        seriesCtx.stroke();
+
+        // 绿色PWM方波
+        seriesCtx.strokeStyle = '#00aa33';
+        seriesCtx.beginPath();
+        for (let x = minScanX; x <= seriesScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 0.25) % period;
+            let pwm = phase < period * delta ? 3 : -3;
+            let y = seriesAxisY - pwm * voltScale / 10;
+            x === minScanX ? seriesCtx.moveTo(x, y) : seriesCtx.lineTo(x, y);
+        }
+        seriesCtx.stroke();
+
+        // 红色输出电压
+        seriesCtx.lineWidth = 3;
+        seriesCtx.strokeStyle = '#ff0000';
+        seriesCtx.beginPath();
+        for (let x = minScanX; x <= seriesScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 0.25) % period;
+            let ripple;
+            if (phase < period * delta) {
+                ripple = phase * 0.8;
+            } else {
+                ripple = (period - phase) * -0.8;
+            }
+            let val = baseVal + ripple;
+            let y = seriesAxisY - val * voltScale / 10;
+            x === minScanX ? seriesCtx.moveTo(x, y) : seriesCtx.lineTo(x, y);
+        }
+        seriesCtx.stroke();
+        seriesCtx.lineWidth = 2;
+    }
+
+    // ===================== 并联型电源 =====================
+    const parallelBtn = document.getElementById('parallelBtn');
+    const parallelDemo = document.getElementById('parallelDemo');
+    const parallelCanvas = document.getElementById('parallelCanvas');
+    const parallelCtx = parallelCanvas.getContext('2d');
+    parallelCanvas.width = canvasW;
+    parallelCanvas.height = pwmCanvasH;
+    const parallelAxisY = pwmCanvasH / 2;
+    let parallelScanX = minScanX;
+
+    let U_I_Par = 2.0;
+    let delta_Par = 0.4;
+
+    const sliderUiPar = document.getElementById('sliderUiPar');
+    const sliderDeltaPar = document.getElementById('sliderDeltaPar');
+    const valUiPar = document.getElementById('valUiPar');
+    const valDeltaPar = document.getElementById('valDeltaPar');
+
+    function syncParallelText(){
+        valUiPar.textContent = U_I_Par.toFixed(1);
+        valDeltaPar.textContent = delta_Par.toFixed(2);
+    }
+
+    sliderUiPar.addEventListener('input', () => {
+        U_I_Par = Number(sliderUiPar.value) / 10;
+        syncParallelText();
+        parallelScanX = minScanX;
+    });
+    sliderDeltaPar.addEventListener('input', () => {
+        delta_Par = Number(sliderDeltaPar.value) / 100;
+        syncParallelText();
+        parallelScanX = minScanX;
+    });
+
+    function drawParallelWave(){
+        drawAxis(parallelCtx, pwmCanvasH, parallelAxisY);
+        const U_O_Par = U_I_Par / (1 - delta_Par);
+        const rippleAmp = 0.3;
+        const iLAmp = 2;
+        const avgIL = 4;
+
+        parallelCtx.lineWidth = 2;
+        // 蓝色：电感电流 iL
+        parallelCtx.strokeStyle = '#0066ff';
+        parallelCtx.beginPath();
+        for (let x = minScanX; x <= parallelScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 0.6) % period; 
+            let iL;
+            if (phase < period * delta_Par) {
+                iL = avgIL - iLAmp + (2 * iLAmp / (period * delta_Par)) * phase;
+            } else {
+                iL = avgIL + iLAmp - (2 * iLAmp / (period * (1 - delta_Par))) * (phase - period * delta_Par);
+            }
+            let y = parallelAxisY - iL * voltScale / 10;
+            x === minScanX ? parallelCtx.moveTo(x, y) : parallelCtx.lineTo(x, y);
+        }
+        parallelCtx.stroke();
+
+        // 绿色：开关管驱动方波 uG
+        parallelCtx.strokeStyle = '#00aa33';
+        parallelCtx.beginPath();
+        for (let x = minScanX; x <= parallelScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 0.6) % period; 
+            let uG = phase < period * delta_Par ? 3 : -3;
+            let y = parallelAxisY - uG * voltScale / 10;
+            x === minScanX ? parallelCtx.moveTo(x, y) : parallelCtx.lineTo(x, y);
+        }
+        parallelCtx.stroke();
+
+        // 红色：输出电压 Uo
+        parallelCtx.lineWidth = 3;
+        parallelCtx.strokeStyle = '#ff0000';
+        parallelCtx.beginPath();
+        for (let x = minScanX; x <= parallelScanX; x++) {
+            let t = (x - axisX) / timeScale;
+            let phase = (t + period * 0.6) % period; 
+            let ripple;
+            if (phase < period * delta_Par) {
+                ripple = -rippleAmp * (phase / (period * delta_Par));
+            } else {
+                ripple = rippleAmp * ((phase - period * delta_Par) / (period * (1 - delta_Par)));
+            }
+            let val = U_O_Par + ripple;
+            let y = parallelAxisY - val * voltScale / 10;
+            x === minScanX ? parallelCtx.moveTo(x, y) : parallelCtx.lineTo(x, y);
+        }
+        parallelCtx.stroke();
+        parallelCtx.lineWidth = 2;
+    }
+
+    // ========== 互斥切换逻辑：二选一，打开一个自动关闭另一个 ==========
+    seriesBtn.addEventListener('click', function () {
+        // 关闭并联演示
+        parallelBtn.classList.remove('active');
+        parallelBtn.textContent = '打开演示';
+        parallelDemo.style.display = 'none';
+
+        // 切换自身状态
+        if (this.classList.contains('active')) {
+            this.classList.remove('active');
+            this.textContent = '打开演示';
+            seriesDemo.style.display = 'none';
+        } else {
+            seriesScanX = minScanX;
+            this.classList.add('active');
+            this.textContent = '关闭演示';
+            seriesDemo.style.display = 'flex';
+        }
+    });
+
+    parallelBtn.addEventListener('click', function () {
+        // 关闭串联演示
+        seriesBtn.classList.remove('active');
+        seriesBtn.textContent = '打开演示';
+        seriesDemo.style.display = 'none';
+
+        // 切换自身状态
+        if (this.classList.contains('active')) {
+            this.classList.remove('active');
+            this.textContent = '打开演示';
+            parallelDemo.style.display = 'none';
+        } else {
+            parallelScanX = minScanX;
+            this.classList.add('active');
+            this.textContent = '关闭演示';
+            parallelDemo.style.display = 'flex';
+        }
+    });
+
+    // 全局动画主循环
+    function animate() {
+        if (!isPaused) {
+            seriesScanX += 1.2;
+            parallelScanX += 1.2;
+            if (seriesScanX > maxScanX) seriesScanX = minScanX;
+            if (parallelScanX > maxScanX) parallelScanX = minScanX;
+        }
+        if(seriesDemo.style.display !== 'none') drawSeriesWave();
+        if(parallelDemo.style.display !== 'none') drawParallelWave();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    // 全局暂停/恢复
+    globalPauseBtn.addEventListener('click', () => {
+        isPaused = !isPaused;
+        if (isPaused) {
+            globalPauseBtn.className = 'resume';
+            globalPauseBtn.textContent = '恢复演示';
+        } else {
+            globalPauseBtn.className = 'pause';
+            globalPauseBtn.textContent = '暂停演示';
+        }
+    });
+
+    // 初始化
+    syncSeriesText();
+    syncParallelText();
+    animate();
+    window.addEventListener('load', () => {
+        setTimeout(() => MathJax.typeset(), 120);
+    });
+</script>
+</body>
+</html>
