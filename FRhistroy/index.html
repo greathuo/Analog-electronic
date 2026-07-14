@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统频率响应分析发展史</title>
+
+<!-- 先配置 MathJax 全局参数 -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],  // 启用 $ 行内公式
+    packages: {'[+]': ['ams']} // 加载常用数学包，兼容更多符号
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<!-- 再引入 MathJax 3 官方 CDN（稳定版） -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+* {margin:0;padding:0;box-sizing:border-box;}
+body {
+  font-family:"Microsoft YaHei",sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  overflow-x:hidden;
+  scroll-behavior: smooth; /* 平滑滚动 */
+}
+/* 返回顶部按钮 */
+.back-top {
+  position: fixed;
+  right: 25px;
+  bottom: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #003380;
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  z-index: 998;
+}
+.back-top.show {
+  opacity: 1;
+  visibility: visible;
+}
+.back-top:hover {
+  transform: translateY(-3px);
+}
+
+header {
+  text-align:center;
+  padding:60px 20px 30px;
+}
+h1 {
+  font-size:28px;
+  color: #003380;
+  margin-bottom:10px;
+}
+.subtitle {
+  font-size:16px;
+  color:#555;
+}
+.timeline {
+  max-width:900px;
+  margin:0 auto;
+  padding:20px;
+  position:relative;
+}
+.timeline::before {
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  bottom:0;
+  width:4px;
+  background:#c8d2e1;
+  transform:translateX(-50%);
+}
+.card {
+  width:45%;
+  background:#ffffff;
+  border:1px solid #e0e0e0;
+  border-radius:12px;
+  padding:20px;
+  margin:20px 0;
+  position:relative;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+/* 卡片悬浮放大 */
+.card:hover {
+  transform:translateY(-5px) scale(1.02);
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+.card.left {left:0;}
+.card.right {left:55%;}
+.card::after {
+  content:"";
+  position:absolute;
+  top:20px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#003380;
+  border:4px solid #f5f5f5;
+  transition: transform 0.3s;
+}
+/* 节点悬浮放大 */
+.card:hover::after {
+  transform: scale(1.2);
+}
+.card.left::after {right:-31px;}
+.card.right::after {left:-31px;}
+.year {
+  font-size:20px;
+  color:#003380;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+.title {
+  font-size:18px;
+  color:#222;
+  margin-bottom:10px;
+}
+.content {
+  font-size:15px;
+  color:#444;
+  line-height:1.7;
+}
+.highlight {
+  color:#003380;
+  font-weight:bold;
+}
+/* 展开详情区域 - 核心：增加两端对齐 */
+.detail {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #ddd;
+  color: #666;
+  font-size: 14px;
+  display: none;
+}
+/* 详情段落 两端对齐 + 优化行高、间距 */
+.detail p {
+  text-align: justify; /* 文字两端对齐 */
+  line-height: 1.8;
+  margin-bottom: 10px;
+}
+.card.active .detail {
+  display: block;
+}
+.tip-text {
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
+}
+footer {
+  text-align:center;
+  padding:40px 20px;
+  color:#666;
+  font-size:14px;
+}
+
+/* 移动端适配 */
+@media (max-width:768px) {
+  .timeline::before {left:20px;}
+  .card {width:calc(100% - 40px);left:0 !important;}
+  .card::after {left:-31px !important;}
+  .detail p {
+    text-align: justify;
+  }
+}
+</style>
+</head>
+<body>
+
+<header id="top">
+  <h1>系统频率响应分析发展史</h1>
+</header>
+
+<div class="timeline">
+  <!-- 1889 亥维赛 -->
+  <div class="card left" id="part1">
+    <div class="year">1889</div>
+    <div class="title">萌芽：亥维赛运算微积分</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        英国工程师<span class="highlight">奥利弗·亥维赛（Oliver Heaviside）</span>提出<span class="highlight">运算微积分</span>，将微分算子视为代数符号，把电路微分方程转化为代数运算，奠定了频域分析的数学基石。
+        </p>
+        <p style="text-indent: 2ch;">
+        运算微积分简化了$RL$、$RC$、$RLC$等基础模拟电路的求解过程，摆脱了传统微分方程复杂的求解步骤，是电路频域分析思想的源头，也为后续傅里叶分析在电路中的应用铺平了道路。
+        </p>
+    </div>
+  </div>
+
+  <!-- 1932 奈奎斯特 -->
+  <div class="card right" id="part2">
+    <div class="year">1932</div>
+    <div class="title">里程碑：奈奎斯特稳定判据</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        贝尔实验室<span class="highlight">奈奎斯特（H. Nyquist）</span>发表反馈放大器稳定性论文，提出<span class="highlight">奈奎斯特判据</span>：通过开环频率响应曲线包围(-1,j0)点次数判断闭环稳定性。
+        </p>
+        <p style="text-indent: 2ch;">
+        该判据是模拟负反馈放大器设计的核心依据，有效解决了放大器高频自激振荡问题。如今运放、多级放大电路、模拟稳压电路的稳定性校验，依旧广泛使用这一理论。
+        </p>
+    </div>
+  </div>
+
+  <!-- 1930s-1940s 博德 -->
+  <div class="card left" id="part3">
+    <div class="year">1930s–1940s</div>
+    <div class="title">实用化：波特图（Bode Plot）</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        贝尔实验室<span class="highlight">博德（H. W. Bode）</span>发明<span class="highlight">对数幅频/相频图</span>，将频率响应转为对数坐标，简化放大器、滤波器设计与校正。
+        </p>
+        <p style="text-indent: 2ch;">
+        波特图直观展示电路的带宽、增益、相位变化，是模拟电子课程必学内容。有源滤波器、谐振回路、高频放大器的频响分析、参数调试均以波特图为标准工具。
+        </p>
+    </div>
+  </div>
+
+  <!-- 二战时期 -->
+  <div class="card right" id="part4">
+    <div class="year">1940s 二战</div>
+    <div class="title">工程爆发：军事与通信驱动</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        火炮瞄准、雷达、飞行控制等需求推动频率响应法大规模落地。负反馈放大器、自动增益控制（AGC）成为通信系统核心。
+        </p>
+        <p style="text-indent: 2ch;">
+        战时各类模拟控制系统、射频通信电路快速迭代，频域分析从纯理论彻底转向工程实践，也让频率响应分析成为电子、控制领域通用的设计语言。
+        </p>
+    </div>
+  </div>
+
+  <!-- 1950s–1960s 时域挑战 -->
+  <div class="card left" id="part5">
+    <div class="year">1950s–1960s</div>
+    <div class="title">挑战：时域状态空间兴起</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        航天与复杂系统推动<span class="highlight">状态空间法</span>崛起，时域分析一度挑战频域主导地位。但频域法因物理直观、实验易测仍不可替代。
+        </p>
+        <p style="text-indent: 2ch;">
+        即便时域分析法快速发展，模拟电路设计依旧优先使用频域指标：带宽、截止频率、相位裕度、增益平坦度等，都是电路性能评判的核心标准。
+        </p>
+    </div>
+  </div>
+
+  <!-- 1965 FFT -->
+  <div class="card right" id="part6">
+    <div class="year">1965</div>
+    <div class="title">复兴：快速傅里叶变换（FFT）</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        <span class="highlight">Cooley-Tukey快速傅里叶变换算法（FFT）</span>诞生，大幅提升傅里叶分析效率，使频率响应可快速实测与仿真，推动模拟-数字混合系统发展。
+        </p>
+        <p style="text-indent: 2ch;">
+        如今电路仿真软件（Multisim、ADS）的交流分析、频谱分析、波特图仪功能，底层均依托FFT算法，实现了模拟电路频响的快速测量与可视化。
+        </p>
+    </div>
+  </div>
+
+  <!-- 1970s–至今 -->
+  <div class="card left" id="part7">
+    <div class="year">1970s–至今</div>
+    <div class="title">深化：多变量与跨领域应用</div>
+    <div class="content">
+      <div class="tip-text">点击展开更多内容</div>
+    </div>
+    <div class="detail">
+        <p style="text-indent: 2ch;">
+        多变量频域理论成熟，应用扩展至结构动力学、电力系统、机械振动。成为模拟电路、数字滤波器、锁相环（PLL）设计的核心工具。
+        </p>
+        <p style="text-indent: 2ch;">
+        频率响应分析贯穿模拟电子全领域，从基础放大电路、滤波电路，到现代射频电路、信号处理电路，始终是分析、设计、调试动态电子系统不可或缺的手段。
+        </p>
+    </div>
+  </div>
+</div>
+
+<!-- 返回顶部按钮 -->
+<button class="back-top" onclick="scrollToTop()">↑</button>
+
+<script>
+// 1. 卡片点击：互斥展开（点开一个自动关闭其他）
+const cards = document.querySelectorAll('.card');
+cards.forEach(card => {
+  card.addEventListener('click', () => {
+    // 先关闭所有卡片
+    cards.forEach(item => item.classList.remove('active'));
+    // 再切换当前卡片状态（已展开则收起，未展开则展开）
+    if (!card.classList.contains('active')) {
+      card.classList.add('active');
+    }
+  });
+});
+
+// 2. 滚动渐入动画
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = 1;
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, {threshold:0.1});
+
+cards.forEach(card => {
+  card.style.opacity = 0;
+  card.style.transform = 'translateY(30px)';
+  card.style.transition = 'all 0.6s ease';
+  observer.observe(card);
+});
+
+// 3. 返回顶部按钮显示/隐藏 + 回到顶部
+const backTopBtn = document.querySelector('.back-top');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 300) {
+    backTopBtn.classList.add('show');
+  } else {
+    backTopBtn.classList.remove('show');
+  }
+});
+
+function scrollToTop() {
+  document.getElementById('top').scrollIntoView({behavior: 'smooth'});
+}
+</script>
+
+</body>
+</html>
