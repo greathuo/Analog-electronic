@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>运算放大器历史 · 交互时间线</title>
+    <style>
+        :root {
+            --gold: #c9901e;
+            --gold-light: #e8b84b;
+            --gold-dark: #a87b18;
+            --blue: #1a73e8;
+            --blue-light: #4a9cf5;
+            --blue-dark: #0d47a1;
+
+            --bg-body: #f0f2f6;
+            --bg-hero: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1a2332;
+            --text-secondary: #4a5a6e;
+            --text-muted: #7a8a9e;
+            --line-color: rgba(26, 115, 232, 0.25);
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.06);
+            --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.10);
+            --border-light: rgba(0, 0, 0, 0.04);
+            --radius: 18px;
+            --font: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font);
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background:var(--blue); border-radius:10px; }
+
+        #particles-canvas {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            z-index:0; pointer-events:none;
+        }
+
+        .container {
+            position:relative; z-index:1;
+            max-width:1200px; margin:0 auto;
+            padding:20px 20px 60px;
+        }
+
+        .hero {
+            position:relative;
+            text-align:center;
+            background:var(--bg-hero);
+            border-radius:0 0 40px 40px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.02);
+            border-bottom:1px solid var(--border-light);
+            margin-bottom:20px;
+            overflow:hidden;
+            padding: 0;
+        }
+        .hero h1 {
+            font-size: 24px;
+            font-weight:800;
+            background: linear-gradient(135deg,var(--blue-dark),var(--blue),var(--blue-light));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+            letter-spacing:2px;
+            line-height:1.2;
+            margin: 16px 0 16px 0;
+            padding-top: 0;
+        }
+        .hero .subtitle {
+            font-size: clamp(1rem,2.5vw,1.3rem); color:var(--text-secondary);
+            max-width:680px; margin:0 auto 24px;
+            text-indent: 2em;
+        }
+        .hero .subtitle strong { color:var(--blue); font-weight:600; }
+
+        .func-module {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 0 auto 40px;
+            max-width: 1000px;
+            width: 100%;
+            padding: 0 10px;
+        }
+        .func-card {
+            background:var(--bg-card); padding:20px 12px; border-radius:var(--radius);
+            box-shadow:var(--shadow-card); border:1px solid var(--border-light);
+            cursor:pointer; transition:all 0.3s ease; text-align:center;
+        }
+        .func-card:hover { transform:translateY(-5px); box-shadow:var(--shadow-card-hover); }
+        .func-card h4 { color:var(--blue-dark); font-size:1rem; margin:8px 0; }
+        .func-card p { font-size:0.85rem; color:var(--text-secondary); line-height:1.5; }
+
+        .scroll-hint {
+            margin-top:30px; display:flex; justify-content:center; gap:6px;
+            color:var(--text-muted); font-size:0.75rem; letter-spacing:4px;
+            animation:bounceDown 2s infinite ease-in-out; opacity:0.7;
+        }
+        @keyframes bounceDown {
+            0%,100% { transform:translateY(0); opacity:0.5; }
+            50% { transform:translateY(8px); opacity:1; }
+        }
+
+        .timeline-header {
+            text-align:center; padding:20px 0 10px; margin-top:20px;
+            cursor: pointer;
+        }
+        .timeline-header h2 {
+            font-size: clamp(1.6rem,4vw,2.6rem); font-weight:600;
+            color:var(--text-primary); letter-spacing:4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .timeline-header h2 span { color:var(--gold); }
+        .timeline-header p { color:var(--text-secondary); font-size:1rem; margin-top:4px; opacity:0.8; }
+        .toggle-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        .toggle-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* 蛇形时间线核心样式 */
+        .timeline {
+            position:relative;
+            padding:0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+        }
+        .timeline.show {
+            max-height: 2000px;
+            opacity: 1;
+            padding:20px 0 10px;
+        }
+        .timeline::before {
+            content:''; position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%);
+            width:2px; background:linear-gradient(to bottom,transparent,var(--line-color),var(--blue),var(--line-color),transparent);
+        }
+
+        .timeline-item {
+            display:flex; align-items:center;
+            padding:24px 0; position:relative; width:50%;
+            cursor: pointer;
+        }
+        /* 左侧节点 */
+        .timeline-item.left {
+            justify-content: flex-end;
+            padding-right: 60px;
+            text-align: right;
+        }
+        /* 右侧节点 */
+        .timeline-item.right {
+            margin-left: 50%;
+            justify-content: flex-start;
+            padding-left: 60px;
+            text-align: left;
+        }
+
+        /* 中轴线圆点 */
+        .timeline-item .dot {
+            position:absolute; top:50%; transform:translateY(-50%);
+            width:22px; height:22px; border-radius:50%;
+            background:var(--bg-card); border:3px solid var(--blue);
+            box-shadow:0 0 0 4px rgba(26,115,232,0.08),0 0 20px rgba(26,115,232,0.1);
+            z-index:2;
+        }
+        .timeline-item.left .dot { right: -11px; }
+        .timeline-item.right .dot { left: -11px; }
+        .timeline-item .dot::after {
+            content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            width:8px; height:8px; border-radius:50%; background:var(--blue); opacity:0.5;
+        }
+
+        /* 图标+年份 容器 */
+        .icon-year {
+            display:flex; flex-direction:column; align-items:center; gap:6px;
+            color:var(--blue-dark);
+            transition: transform 0.2s ease;
+        }
+        .timeline-item:hover .icon-year { transform: scale(1.08); }
+        .icon-year .icon { font-size:1.6rem; }
+        .icon-year .year {
+            font-size:1.3rem; font-weight:700;
+            background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+
+        /* 原详情卡片隐藏 */
+        .timeline-item .card { display: none; }
+
+        .epilogue {
+            margin-top:60px; padding:40px 30px; text-align:center;
+            background:var(--bg-card); border:1px solid var(--border-light); border-radius:var(--radius);
+            max-width:760px; margin-left:auto; margin-right:auto; box-shadow:var(--shadow-card);
+        }
+        .epilogue h3 { font-size:1.4rem; font-weight:600; color:var(--gold-dark); margin-bottom:12px; }
+        .epilogue p { color:var(--text-secondary); font-size:0.98rem; line-height:1.8; }
+        .epilogue .highlight { color:var(--blue); font-weight:500; }
+
+        /* 弹窗样式 */
+        .modal-mask {
+            position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+            z-index:200; display:none; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal-box {
+            background:#fff; border-radius:var(--radius); max-width:600px; width:100%;
+            max-height:80vh; overflow-y:auto; padding:30px; box-shadow:0 10px 50px rgba(0,0,0,0.15);
+            position:relative;
+        }
+        .modal-close {
+            position:absolute; top:20px; right:20px; font-size:1.5rem;
+            color:var(--text-muted); cursor:pointer;
+        }
+        .modal-year {
+            font-size:1.8rem; font-weight:800;
+            background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+            margin-bottom:10px;
+        }
+        .modal-title { font-size:1.4rem; color:var(--text-primary); margin-bottom:16px; }
+        .modal-desc { color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+        .modal-tag {
+            display:inline-block; font-size:0.7rem; padding:3px 16px; border-radius:100px;
+            background:rgba(26,115,232,0.06); border:1px solid rgba(26,115,232,0.08);
+            color:var(--blue); letter-spacing:1px; font-weight:500;
+        }
+.flex-row {
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  gap: 8px; /* 图标和文字之间的间距 */
+  justify-content: center;
+}
+        .back-top {
+            position:fixed; bottom:30px; right:30px; width:44px; height:44px; border-radius:50%;
+            background:var(--blue); color:#fff; border:none; font-size:1.2rem; cursor:pointer;
+            box-shadow:0 4px 15px rgba(26,115,232,0.3); opacity:0; visibility:hidden; transition:all 0.3s; z-index:90;
+        }
+        .back-top.show { opacity:1; visibility:visible; }
+
+        .footer { text-align:center; padding:40px 20px 10px; color:var(--text-muted); font-size:0.7rem; letter-spacing:2px; opacity:0.5; }
+
+        /* 响应式适配：小屏幕转为单列 */
+        @media (max-width: 768px) {
+            .func-module { grid-template-columns: 1fr; }
+        }
+        @media (max-width:820px) {
+            .timeline::before { left:24px; }
+            .timeline-item {
+                width:100%; margin-left:0 !important;
+                justify-content:flex-start !important;
+                padding-left:60px !important;
+                padding-right:0 !important;
+                text-align:left !important;
+            }
+            .timeline-item .dot { left:24px !important; right:auto !important; }
+            .hero { padding:0 12px; }
+            .container { padding:15px 14px 40px; }
+            .scroll-hint { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="container">
+        <section class="hero" id="heroSection">
+            <h1 id="heroTitle">运算放大器的历史</h1>
+            <p class="subtitle">
+                从真空管到纳米工艺，<strong>运算放大器</strong>走过八十余年的辉煌历程，是模拟电路中最核心的基石。
+            </p>
+            <section id="function" class="func-module">
+                <div class="func-card" data-modal="intro">
+                    <div class="flex-row">
+                    <div class="icon">📖</div>
+                    <h4>运放基础介绍</h4>
+                    </div>
+                    <p>了解运算放大器定义、核心特性与基本用途</p>
+                </div>
+                <div class="func-card" data-modal="classify">
+                    <div class="flex-row">
+                    <div class="icon">📦</div>
+                    <h4>器件分类</h4>
+                    </div>
+                    <p>按工艺、用途划分不同类型运算放大器</p>
+                </div>
+                <div class="func-card" data-modal="application">
+                    <div class="flex-row">
+                    <div class="icon">🔧</div>
+                    <h4>应用场景</h4>
+                    </div>
+                    <p>涵盖工业、医疗、消费电子等各大领域</p>
+                </div>
+            </section>
+
+            <div class="scroll-hint"><span>✦</span><span>向下滚动探索</span><span>✦</span></div>
+        </section>
+
+        <div class="timeline-header" id="timelineHeader">
+            <h2><span class="toggle-icon collapsed">▶</span> 演进 <span>·</span> 里程碑</h2>
+            <p>点击标题展开/折叠时间线</p>
+        </div>
+
+        <div class="timeline" id="timeline">
+            <div class="timeline-item left" data-id="1941">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">💻</span>
+                    <span class="year">1941</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item right" data-id="1952">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">📡</span>
+                    <span class="year">1952</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item left" data-id="1958">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🔬</span>
+                    <span class="year">1958</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item right" data-id="1963">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🧩</span>
+                    <span class="year">1963</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item left" data-id="1968">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">👑</span>
+                    <span class="year">1968</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item right" data-id="1970s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🎯</span>
+                    <span class="year">1970s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item left" data-id="1980s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🔋</span>
+                    <span class="year">1980s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item right" data-id="1990s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🚀</span>
+                    <span class="year">1990s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item left" data-id="2000s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">📱</span>
+                    <span class="year">2000s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item right" data-id="2010s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🧬</span>
+                    <span class="year">2010s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+            <div class="timeline-item left" data-id="2020s">
+                <span class="dot"></span>
+                <div class="icon-year">
+                    <span class="icon">🤖</span>
+                    <span class="year">2020s</span>
+                </div>
+                <div class="card"></div>
+            </div>
+        </div>
+
+        <div class="epilogue">
+            <h3>✦ 从真空管到智能芯片 ✦</h3>
+            <p style="text-align: left; text-indent: 2em;">
+                运算放大器的发展史是一部<span class="highlight">模拟电子技术的进化史</span>。
+                八十余年来，它从实验室走向工业、走向消费、走向万物互联，
+                始终是<span class="highlight">连接物理世界与数字世界的桥梁</span>。
+            </p>
+        </div>
+    </div>
+
+    <div class="modal-mask" id="globalModal">
+        <div class="modal-box">
+            <span class="modal-close" id="modalClose">×</span>
+            <div class="modal-year" id="modalYear"></div>
+            <h3 class="modal-title" id="modalTitle"></h3>
+            <div class="modal-desc" id="modalDesc"></div>
+            <span class="modal-tag" id="modalTag"></span>
+        </div>
+    </div>
+
+    <button class="back-top" id="backTop">↑</button>
+
+    <script>
+        window.onload = function(){
+            window.scrollTo(0, 0);
+        }
+        history.scrollRestoration = "manual";
+
+        // 功能卡片弹窗数据
+        const modalData = {
+            intro: {
+                title: "运算放大器 · 基础介绍",
+                content: "运算放大器（简称运放）是一种具有极高电压增益的直流耦合电子放大电路。最初用于模拟计算机实现加减、积分、微分等数学运算，因此得名。它具备高输入阻抗、低输出阻抗、增益可调、电路组态灵活四大核心特点，是模拟电子电路中应用最广泛的通用器件，可实现信号放大、滤波、比较、运算、稳压等多种功能。"
+            },
+            classify: {
+                title: "运算放大器 · 器件分类",
+                content: "1. 真空管运放：最早的形态，体积大、功耗高，现已淘汰；\n2. 分立晶体管运放：由独立晶体管搭建，电路复杂，一致性一般；\n3. 双极型集成运放：通用性强、驱动能力好，代表型号μA741、LM358；\n4. CMOS运放：超低功耗，主打电池供电便携设备；\n5. 精密仪表运放：超低失调、低漂移，用于精密测量与传感器采集；\n6. 高速射频运放：高带宽、高响应速度，应用于通信、视频、雷达等高频场景。"
+            },
+            application: {
+                title: "运算放大器 · 应用场景",
+                content: "✅ 音频设备：功放、调音台、耳机放大、音响系统；\n✅ 医疗电子：心电、血氧、血压等生理信号采集与放大；\n✅ 工业控制：现场信号调理、数据采集、伺服驱动、传感器变送；\n✅ 消费电子：手机、家电、可穿戴设备、智能家居；\n✅ 通信领域：射频信号处理、基带放大、信号滤波；\n✅ 仪器仪表：万用表、示波器、精密检测设备核心模块。"
+            }
+        };
+
+        // 时间线详情数据
+        const timelineData = {
+            "1941": {
+                year: "1941",
+                title: "真空管运算放大器的诞生",
+                desc: "由贝尔实验室的Karl D. Swartzel Jr. 申请了第一个真空管运算放大器的专利。",
+                tag: "⚡ 先驱"
+            },
+            "1952": {
+                year: "1952",
+                title: "真空管运放 · K2-W",
+                desc: "George A. Philbrick推出K2-W，第一款商用的真空管运算放大器。",
+                tag: "🔮 真空管时代"
+            },
+            "1958": {
+                year: "1958",
+                title: "锗晶体管运放出现",
+                desc: "美国德州仪器公司的Jack Kilby将晶体管和其他元件用金丝连接起来，制作了第一个锗片上的集成电路。",
+                tag: "🧊 晶体管时代"
+            },
+            "1963": {
+                year: "1963",
+                title: "IC运放 · μA702",
+                desc: "美国仙童半导体公司推出μA702，由传奇工程师 Bob Widlar 设计，这款单片集成电路运算放大器开创了IC运放的新纪元。",
+                tag: "🌟 集成时代"
+            },
+            "1968": {
+                year: "1968",
+                title: "经典μA741",
+                desc: "美国仙童半导体公司的Dave Fullagar设计并推出了μA741，它内嵌频率补偿，是广泛使用的运算放大器，至今仍在生产，销量超过数十亿颗。",
+                tag: "🏆 传奇之作"
+            },
+            "1970s": {
+                year: "1970年代",
+                title: "精密运放时代",
+                desc: "OP07、OP27等精密运算放大器问世，提供极低的失调电压和漂移。仪器仪表、医疗电子、数据采集等领域因此获得了前所未有的精度。",
+                tag: "📐 精密测量"
+            },
+            "1980s": {
+                year: "1980年代",
+                title: "CMOS运放 · 低功耗",
+                desc: "CMOS技术引入运放设计，功耗大幅降低至微瓦级别。便携设备、电池供电产品得以普及，运放开始走进消费电子领域。",
+                tag: "🌱 低功耗革命"
+            },
+            "1990s": {
+                year: "1990 年代",
+                title: "高速运放爆发",
+                desc: "AD8001、LMH 系列等高速运放带宽达数百MHz甚至GHz，支持视频传输、无线通信、雷达等高频应用，推动了多媒体时代的到来。",
+                tag: "⚡ 高频时代"
+            },
+            "2000s": {
+                year: "2000 年代",
+                title: "轨到轨 · 低电压",
+                desc: "轨到轨（Rail-to-Rail）输入输出运放成为主流，支持 1.8V~5V 低电压工作。智能手机、可穿戴设备等移动终端得以实现高性能模拟信号处理。",
+                tag: "📲 移动化"
+            },
+            "2010s": {
+                year: "2010 年代",
+                title: "精密集成 · 信号链",
+                desc: "运放与 ADC、DAC、基准源等高度集成，形成完整的信号链解决方案。精度达到 nV 级，噪声低至 nV/√Hz，助力工业 4.0、自动驾驶等前沿领域。",
+                tag: "🔗 系统级集成"
+            },
+            "2020s": {
+                year: "2020 年代",
+                title: "智能化 · 新基建",
+                desc: "在 5G 通信、AI 传感器、物联网、新能源汽车等领域，运算放大器继续扮演着不可或缺的角色，向着更智能、更节能、更集成的方向演进。",
+                tag: "🌐 智能互联"
+            }
+        };
+
+        // 粒子背景
+        (function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let w, h;
+            const particles = [];
+            const COUNT = 60;
+            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
+            class Particle {
+                constructor() { this.reset(); }
+                reset() {
+                    this.x = Math.random() * w; this.y = Math.random() * h;
+                    this.size = Math.random() * 2.5 + 0.8;
+                    this.speedX = (Math.random() - 0.5) * 0.4;
+                    this.speedY = (Math.random() - 0.5) * 0.4;
+                    this.opacity = Math.random() * 0.3 + 0.1;
+                }
+                update() {
+                    this.x += this.speedX; this.y += this.speedY;
+                    if (this.x < 0 || this.x > w) this.speedX *= -1;
+                    if (this.y < 0 || this.y > h) this.speedY *= -1;
+                }
+                draw() {
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(26, 115, 232, ${this.opacity})`; ctx.fill();
+                }
+            }
+            for (let i = 0; i < COUNT; i++) particles.push(new Particle());
+            function drawLines() {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 150) {
+                            const alpha = (1 - dist / 150) * 0.12;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(26, 115, 232, ${alpha})`;
+                            ctx.lineWidth = 0.8; ctx.stroke();
+                        }
+                    }
+                }
+            }
+            function animate() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => { p.update(); p.draw(); });
+                drawLines(); requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // 弹窗元素
+        const globalModal = document.getElementById('globalModal');
+        const modalClose = document.getElementById('modalClose');
+        const modalYear = document.getElementById('modalYear');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalTag = document.getElementById('modalTag');
+
+        function closeModal() { globalModal.style.display = 'none'; }
+        modalClose.addEventListener('click', closeModal);
+        globalModal.addEventListener('click', (e) => { if(e.target === globalModal) closeModal(); });
+
+        // 功能卡片弹窗
+        document.querySelectorAll('.func-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const key = card.dataset.modal;
+                modalTitle.innerText = modalData[key].title;
+                modalDesc.innerText = modalData[key].content;
+                modalYear.innerText = '';
+                modalTag.innerText = '';
+                globalModal.style.display = 'flex';
+            });
+        });
+
+        // 时间线点击弹窗
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                const d = timelineData[id];
+                modalYear.innerText = d.year;
+                modalTitle.innerText = d.title;
+                modalDesc.innerText = d.desc;
+                modalTag.innerText = d.tag;
+                globalModal.style.display = 'flex';
+            });
+        });
+
+        // 回到顶部
+        const backTop = document.getElementById('backTop');
+        window.addEventListener('scroll', () => {
+            if(window.scrollY > 400) backTop.classList.add('show');
+            else backTop.classList.remove('show');
+        });
+        backTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+        // 里程碑点击展开/折叠时间线
+        const timelineHeader = document.getElementById('timelineHeader');
+        const timeline = document.getElementById('timeline');
+        const toggleIcon = document.querySelector('.toggle-icon');
+        timelineHeader.addEventListener('click', () => {
+            timeline.classList.toggle('show');
+            toggleIcon.classList.toggle('collapsed');
+        });
+    </script>
+</body>
+</html>
