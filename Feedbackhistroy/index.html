@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>负反馈放大器发展史 | 模拟电子技术</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tech: {
+              blue: '#165DFF',
+              light: '#E8F3FF',
+              gray: '#6B7280',
+              dark: '#1E293B'
+            }
+          },
+          fontFamily: {
+            sans: ['system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    .circuit-img1920 {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+    .circuit-img1927 {
+        display: block;
+        max-width: 80%;
+        height: auto;
+        margin: 0 auto;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+    p {
+        text-align: justify;
+    }
+    @layer utilities {
+      .page-wrap {
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+      .page-item {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        transition: transform 0.5s ease-in-out;
+      }
+      .page-hide-left { transform: translateX(-100%); }
+      .page-hide-right { transform: translateX(100%); }
+      .page-active { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body class="m-0 p-0 bg-white overflow-hidden">
+  <div class="page-wrap relative">
+
+    <!-- 1 封面 -->
+    <div class="page-item page-active flex flex-col justify-center items-center bg-gradient-to-br from-tech-blue to-blue-400 text-white p-6">
+      <h1 class="text-[clamp(2rem,8vw,3.5rem)] font-bold text-center leading-tight">负反馈放大器发展史</h1>
+      <p class="mt-4 text-[clamp(1rem,6vw,1.4rem)] opacity-90">模拟电子技术核心灵魂</p>
+      <div class="my-10 w-80 h-40 rounded-full bg-white/20 flex items-center justify-center">
+        <img src="images/feedback.png" alt="图标" class="w-64 h-64 object-contain">
+      </div>
+      <p class="text-[clamp(1rem,3vw,1.3rem)] opacity-100 mt-6">1927 — 至今</p>
+      <p class="text-[clamp(1rem,3vw,1.3rem)] mt-2">从渡轮灵感出发，构建现代电子基石</p>
+    </div>
+
+    <!-- 2 时代背景（已严格闭合） -->
+    <div class="page-item page-hide-right bg-tech-light p-6 md:p-10 overflow-y-auto">
+      <h2 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-tech-dark border-l-4 border-tech-blue pl-4 mb-6">
+        前传：长途电话的失真难题
+      </h2>
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-3"><i class="fa fa-history mr-2"></i>时代背景</h3>
+          <p class="text-gray-700 leading-relaxed">
+            20世纪初，真空三极管成功实现信号放大，成为长途有线通信的核心器件。但早期放大器存在致命缺陷：<strong>高增益伴随严重非线性失真</strong>。
+          </p>
+          <p class="text-gray-700 leading-relaxed mt-3">
+            多级级联放大后，语音信号畸变、噪声叠加，跨洲、跨洋的远距离通话音质极差，当时技术始终无法突破通信距离与音质的矛盾。
+          </p>
+        </div>
+        <img src="images/distortion.png" class="circuit-img1920" alt="失真波形示意图">
+      </div>
+    </div>
+
+    <!-- 3 1927 布莱克 -->
+    <div class="page-item page-hide-right bg-white p-6 md:p-10 overflow-y-auto">
+      <h2 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-tech-dark border-l-4 border-tech-blue pl-4 mb-6">
+        1927.8.2 划时代构想：负反馈诞生
+      </h2>
+      <div class="max-w-3xl mx-auto grid md:grid-cols-2 gap-6">
+        <div class="bg-tech-light rounded-xl p-6">
+          <img src="images/HSBlack.jpg" alt="哈罗德·史蒂芬·布莱克" class="float-left w-28 h-auto rounded-lg mr-4 mb-3">
+          <p class="text-gray-700 leading-relaxed">
+            <strong>哈罗德·史蒂芬·布莱克</strong>，AT&T贝尔实验室工程师。在通勤渡轮上突发灵感，彻底改变放大器设计思路。
+          </p>
+          <p class="text-gray-700 leading-relaxed mt-3">
+            他放弃“制造绝对完美的线性放大器”的传统思路，提出：<strong>将输出信号反向馈入输入端，实现自我纠错</strong>，当场在《纽约时报》空白处绘制了简单的框图并进行了初步数学推导。
+          </p>
+          <div class="clear-both"></div>
+        </div>
+        <img src="images/Black-NewYorkTimes.png" class="circuit-img1927" alt="布莱克手稿">
+      </div>
+    </div>
+
+    <!-- 4 理论大厦（奈奎斯特、博德） -->
+    <div class="page-item page-hide-right bg-tech-light p-6 md:p-10 overflow-y-auto">
+      <h2 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-tech-dark border-l-4 border-tech-blue pl-4 mb-6">
+        理论大厦：解决振荡难题
+      </h2>
+      <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-3"><i class="fa fa-exclamation-triangle mr-2"></i>早期挑战</h3>
+          <p class="text-gray-700 leading-relaxed">
+            1927年12月实验验证构想可行，但业界普遍担忧：负反馈极易引发<strong>自激振荡</strong>，导致放大器失效。该专利历经9年审核，1937年才正式授权。
+          </p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="grid grid-cols-[1fr_3fr] gap-3 items-center">
+              <div><img src="images/nyquist.png" alt="哈利·奈奎斯特" class="w-full h-auto rounded-lg object-cover"></div>
+              <div>
+                <h3 class="text-lg font-semibold text-tech-blue mb-3">哈利·奈奎斯特</h3>
+                <p class="text-gray-700 leading-relaxed">
+                  提出<strong>奈奎斯特稳定判据</strong>，通过开环频率特性判定闭环系统稳定性，从理论上解决振荡问题。
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="grid grid-cols-[1fr_3fr] gap-3 items-center">
+              <div><img src="images/bode.png" alt="亨德里克·博德" class="w-full h-auto rounded-lg object-cover"></div>
+              <div>
+                <h3 class="text-lg font-semibold text-tech-blue mb-3">亨德里克·博德</h3>
+                <p class="text-gray-700 leading-relaxed">
+                  发明<strong>波特图</strong>，用幅频、相频曲线直观分析电路特性，成为负反馈放大器标配设计工具。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-3"><i class="fa fa-check-circle mr-2"></i>实战验证</h3>
+          <p class="text-gray-700 leading-relaxed">
+            1930-1931年美国新泽西长途电话现场测试大获成功；1934年布莱克发表经典论文《稳定反馈放大器》，系统完善整套理论体系。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 1940-1960 多领域应用 -->
+    <div class="page-item page-hide-right bg-white p-6 md:p-10 overflow-y-auto">
+      <h2 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-tech-dark border-l-4 border-tech-blue pl-4 mb-6">
+        遍地开花：全领域技术应用
+      </h2>
+      <div class="max-w-3xl mx-auto space-y-6">
+        <div class="bg-tech-light rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-2">🎵 高保真音频</h3>
+          <p class="text-gray-700">
+            <strong>威廉逊放大器</strong>问世，首款大规模商用负反馈音频功放，失真度大幅降低，正式开启 Hi-Fi 高保真时代，成为电子管功放标杆。
+          </p>
+        </div>
+        <div class="bg-tech-light rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-2">⚔️ 军事与精密仪器</h3>
+          <p class="text-gray-700">
+            二战期间用于火控系统放大器，大幅提升装备精度；战后应用于精密振荡器、信号发生器，间接推动惠普等电子企业发展。
+          </p>
+        </div>
+        <div class="bg-tech-light rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-2">💻 运算放大器</h3>
+          <p class="text-gray-700">
+            鲍勃·维德拉设计首款单片集成运放 <strong>μA702</strong>，负反馈成为运算放大器核心工作原理，模拟计算、信号处理进入集成电路时代。
+          </p>
+        </div>
+        <div class="bg-tech-light rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-2">📞 全球通信网络</h3>
+          <p class="text-gray-700">
+            应对长途通信失真问题，支撑起横跨大陆、大洋的现代电话网络。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 晶体管 & IC 时代 -->
+    <div class="page-item page-hide-right bg-tech-light p-6 md:p-10 overflow-y-auto">
+      <h2 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-tech-dark border-l-4 border-tech-blue pl-4 mb-6">
+        技术迭代：晶体管与集成电路时代
+      </h2>
+      <div class="max-w-3xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div class="bg-white rounded-xl shadow p-6">
+            <h3 class="text-lg font-semibold text-tech-blue mb-3">晶体管时代 1950s+</h3>
+            <p class="text-gray-700 leading-relaxed">
+              晶体管替代笨重的真空管，电路体积、功耗大幅下降，工作频率进一步提升。负反馈设计适配性更强，广泛用于收音机、电视、工业控制电路。
+            </p>
+          </div>
+          <div class="bg-white rounded-xl shadow p-6">
+            <h3 class="text-lg font-semibold text-tech-blue mb-3">集成电路时代 1970s+</h3>
+            <p class="text-gray-700 leading-relaxed">
+              负反馈被深度集成到各类模拟芯片中：通用运放、电源芯片、射频放大器、传感器调理电路等，成为芯片内部标配结构。
+            </p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6">
+          <h3 class="text-lg font-semibold text-tech-blue mb-3">模拟电子技术核心地位</h3>
+          <p class="text-gray-700 leading-relaxed">
+            时至今日，负反馈仍是模拟电子技术四大核心（放大、滤波、振荡、直流电源）的基础知识点。从消费电子、汽车电子、医疗设备到航空航天，现代电子系统几乎全部依赖负反馈技术。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 翻页按钮 -->
+    <div class="fixed left-3 top-1/2 -translate-y-1/2 z-50">
+      <button id="prevBtn" class="w-10 h-10 rounded-full bg-tech-blue/80 text-white flex items-center justify-center hover:bg-tech-blue transition">
+        <i class="fa fa-chevron-left"></i>
+      </button>
+    </div>
+    <div class="fixed right-3 top-1/2 -translate-y-1/2 z-50">
+      <button id="nextBtn" class="w-10 h-10 rounded-full bg-tech-blue/80 text-white flex items-center justify-center hover:bg-tech-blue transition">
+        <i class="fa fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- 页码指示器 -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-50" id="pageIndicator"></div>
+
+  </div>
+
+  <script>
+    const pages = document.querySelectorAll('.page-item');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const indicator = document.getElementById('pageIndicator');
+    let currentIndex = 0;
+    const totalPage = pages.length;
+
+    for(let i = 0; i < totalPage; i++){
+      const dot = document.createElement('span');
+      dot.className = `block w-2 h-2 rounded-full ${i === 0 ? 'bg-tech-blue' : 'bg-gray-300'}`;
+      indicator.appendChild(dot);
+    }
+    const dots = indicator.querySelectorAll('span');
+
+    function updatePage(){
+      pages.forEach((page, idx) => {
+        page.classList.remove('page-active','page-hide-left','page-hide-right');
+        if(idx === currentIndex){
+          page.classList.add('page-active');
+        }else if(idx < currentIndex){
+          page.classList.add('page-hide-left');
+        }else{
+          page.classList.add('page-hide-right');
+        }
+      });
+      dots.forEach((dot, idx) => {
+        dot.className = `block w-2 h-2 rounded-full ${idx === currentIndex ? 'bg-tech-blue' : 'bg-gray-300'}`;
+      });
+      prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
+      nextBtn.style.opacity = currentIndex === totalPage - 1 ? '0.3' : '1';
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if(currentIndex > 0){
+        currentIndex--;
+        updatePage();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if(currentIndex < totalPage - 1){
+        currentIndex++;
+        updatePage();
+      }
+    });
+
+    let startX = 0, moveX = 0;
+    document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    document.addEventListener('touchmove', e => moveX = e.touches[0].clientX);
+    document.addEventListener('touchend', () => {
+      const diff = moveX - startX;
+      if(diff > 50 && currentIndex > 0) currentIndex--;
+      if(diff < -50 && currentIndex < totalPage - 1) currentIndex++;
+      updatePage();
+      startX = moveX = 0;
+    });
+
+    MathJax.typeset();
+  </script>
+</body>
+</html>
