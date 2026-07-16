@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟集成电路发展史</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .timeline-line {
+                @apply absolute left-1.5 w-1 h-full bg-primary/30;
+            }
+            .timeline-dot {
+                @apply absolute left-0 w-4 h-4 bg-primary rounded-full z-10 transition-all duration-300;
+            }
+            .timeline-dot.active {
+                @apply w-6 h-6 bg-secondary shadow-lg;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+            }
+            .circuit-animate {
+                @apply transition-all duration-500 ease-in-out;
+            }
+
+            /* 防止 flex 高度塌陷 */
+            .slide-wrap {
+                @apply relative overflow-hidden transition-[height] duration-500 ease-out;
+            }
+            .slide-list {
+                @apply flex transition-transform duration-500 ease-out items-start;
+            }
+            .slide-item {
+                @apply min-w-full h-auto px-2;
+            }
+
+            .slide-dot {
+                @apply w-2 h-2 rounded-full bg-gray-300 transition-all duration-300 cursor-pointer;
+            }
+            .slide-dot.active {
+                @apply w-6 bg-primary;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light text-dark overflow-x-hidden">
+    <header class="fixed top-0 left-0 w-full z-30 pt-12 pb-8 md:pt-32 md:pb-12 bg-gradient-to-br from-blue-300 to-blue-100">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-3xl md:text-5xl font-bold mb-2 text-shadow">方寸之间，电筑传奇</h1>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-700 mb-0 leading-snug">
+                模拟集成电路的发展史<br>一部在芯片方寸之间挑战物理极限<br>用创新电路设计弥补工艺不足的历史。
+            </p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pt-56 md:pt-72 pb-16">
+        <!-- 轮播容器：移除内部底部圆点 -->
+        <div class="slide-wrap mb-4" id="slideWrap">
+            <!-- 上排圆点 -->
+            <div class="flex justify-center gap-2 mb-4" id="topDots">
+                <span class="slide-dot active" data-index="0"></span>
+                <span class="slide-dot" data-index="1"></span>
+                <span class="slide-dot" data-index="2"></span>
+                <span class="slide-dot" data-index="3"></span>
+            </div>
+
+            <!-- 左右按钮 -->
+            <button id="prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-white card-hover">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+            <button id="nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/80 rounded-full shadow-lg flex items-center justify-center text-primary hover:bg-white card-hover">
+                <i class="fa fa-chevron-right"></i>
+            </button>
+
+            <!-- 滑动内容 -->
+            <div class="slide-list" id="slideList">
+                <!-- 第1页：从分立到集成 -->
+                <div class="slide-item">
+                    <section id="origin">
+                        <div class="text-center mb-16">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-4 w-80 inline-block border-b-4 border-primary pb-2">
+                                📜 从分立到集成
+                                <p class="text-gray-600 max-w-2xl mx-auto mt-4 text-base">
+                                    从概念萌芽到商用普及<br>模拟集成电路开启了电子技术的集成时代
+                                </p>
+                            </h2>
+                        </div>
+  
+                        <div class="relative pl-16">
+                            <div class="timeline-line"></div>
+                            <div class="mb-2">
+                                <div class="timeline-dot" data-year="1952"></div>
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="md:w-full md:pr-12 md:text-left mb-6 md:mb-0">
+                                        <h3 class="text-xl font-bold text-primary mb-2">1952年 | 概念萌芽</h3>
+                                        <p class="text-gray-700">英国工程师杰弗里·达默首次提出将电子元件集成在单片半导体上的构想，为集成电路的诞生埋下伏笔。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="timeline-dot" data-year="1958"></div>
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="md:w-full md:pl-0 md:text-left mb-6 md:mb-0 order-1 md:order-2">
+                                        <h3 class="text-xl font-bold text-primary mb-2">1958年 | 历史诞生</h3>
+                                        <p class="text-gray-700">德州仪器的杰克·基尔比用锗材料制成相移振荡器，标志着世界上第一块集成电路的诞生，2000年获诺贝尔物理学奖。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="timeline-dot" data-year="1965"></div>
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="md:w-full md:pr-12 md:text-left mb-6 md:mb-0">
+                                        <h3 class="text-xl font-bold text-primary mb-2">1965年 | 摩尔定律</h3>
+                                        <p class="text-gray-700">戈登·摩尔提出著名的摩尔定律，预言芯片上的晶体管数量约每两年翻一番，指引了包括模拟IC在内的整个产业发展。</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="timeline-dot" data-year="1966"></div>
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="md:w-full md:pl-0 md:text-left mb-6 md:mb-0 order-1 md:order-2">
+                                        <h3 class="text-xl font-bold text-primary mb-2">1964年 | 里程碑产品</h3>
+                                        <p class="text-gray-700">首个单片集成运算放大器µA702问世，而后续的µA741（1968年）凭借其易用性，成为最经典的运算放大器，定义了现代模拟IC的基石。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- 第2页：电流源与有源负载 -->
+                <div class="slide-item">
+                    <section id="core1">
+                        <div class="text-center mb-2">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-4 w-80 inline-block border-b-4 border-primary pb-2">
+                                💡 电流源与有源负载：模拟IC的"杠杆"
+                                <p class="text-gray-600 max-w-2xl mx-auto mt-4 text-base">
+                                    用有源器件替代大电阻<br>解决集成电路工艺的核心难题
+                                </p>
+                            </h2>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="text-xl font-bold text-primary mb-1">背景与问题</h3>
+                                    <ul class="list-disc pl-5 text-gray-700">
+                                        <li class="mb-2">分立元件时代，放大器常用大电阻作负载以获得高增益。</li>
+                                        <li class="mb-6">在芯片上，制造一个大阻值电阻面积巨大、成本高昂，且会占用宝贵的电压裕度。</li>
+                                    </ul>
+                                    <h3 class="text-xl font-bold text-primary mb-1">解决方案</h3>
+                                    <p class="text-gray-700 mb-6">用工作在恒流区的晶体管替代电阻，放大/恒流区晶体管的小信号输出阻抗极高，且直流压降很小。</p>
+                                    <h3 class="text-xl font-bold text-primary mb-1">核心优势</h3>
+                                    <ul class="list-disc pl-5 text-gray-700">
+                                        <li class="mb-2">用微小的直流压降换取了巨大的交流电阻，解决了高增益与大电压摆幅之间的矛盾。</li>
+                                        <li>为电路提供稳定的偏置电流，与有源负载共同构成了模拟IC的"杠杆"，用极小的代价提高电路性能。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- 第3页：差分放大电路 -->
+                <div class="slide-item">
+                    <section id="core2">
+                        <div class="text-center mb-2">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-4 w-80 inline-block border-b-4 border-primary pb-2">
+                                ⚖️ 差分放大电路：抑制干扰的"天平"
+                                <p class="text-gray-600 max-w-2xl mx-auto mt-4 text-base">
+                                    放大差值信号、抑制共模干扰<br>运算放大器输入单元的标准选择
+                                </p>
+                            </h2>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div class="order-1 md:order-2">
+                                    <h3 class="text-xl font-bold text-primary mb-1">历史渊源</h3>
+                                    <p class="text-gray-700 mb-6">差分放大电路可追溯到真空管时代，首项专利于1936年由Alan Blumlein申请。</p>
+                                    <h3 class="text-xl font-bold text-primary mb-1">核心优势</h3>
+                                    <p class="text-gray-700 mb-6">差分放大器放大的是两个输入信号的差值，能有效抑制共模干扰（如温度漂移、电源噪声）。</p>
+                                    <h3 class="text-xl font-bold text-primary mb-1">工艺契合</h3>
+                                    <p class="text-gray-700">集成电路工艺易于制造参数匹配的元件，而差分放大电路性能依赖晶体管匹配。在IC中实现高性能差分放大器具有天然优势，成为运算放大器输入级的标准选择。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- 第4页：功率放大电路 -->
+                <div class="slide-item">
+                    <section id="core3">
+                        <div class="text-center mb-2">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-4 w-80 inline-block border-b-4 border-primary pb-2">
+                                🔋 功率放大电路：驱动世界的"引擎"
+                                <p class="text-gray-600 max-w-2xl mx-auto mt-4 text-base">
+                                    从分立到集成<br>追求高效率、高功率与高集成度
+                                </p>
+                            </h2>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div class="order-1 md:order-2">
+                                    <h3 class="text-xl font-bold text-primary mb-1">分立时期</h3>
+                                    <ul class="list-disc pl-5 text-gray-700">
+                                        <li class="mb-2">由分立晶体管构成，发展出无输出电容OCL和无输出变压器OTL等经典电路形式。</li>
+                                        <li class="mb-6">特点：结构复杂，体积大；效率较低（50-60%）；成本高，可靠性差。</li>
+                                    </ul>
+                                    <h3 class="text-xl font-bold text-primary mb-1">集成化时期</h3>
+                                    <ul class="list-disc pl-5 text-gray-700">
+                                        <li class="mb-2">集成功率放大器成为主流，IC设计中广泛采用互补推挽输出级。</li>
+                                        <li class="mb-6">特点：集成度高，体积小；效率较高（70-80%）；成本低，可靠性好。</li>
+                                    </ul>
+                                    <h3 class="text-xl font-bold text-primary mb-1">现代发展</h3>
+                                    <ul class="list-disc pl-5 text-gray-700">
+                                        <li class="mb-2">功率放大器同时追求高功率、高效率、高集成度，常采用开关方式工作的D类功放。</li>
+                                        <li>特点：数字控制，效率极高（超过90%）；低功耗，发热小；适合便携设备与新能源。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 修复：底部圆点移出轮播容器，独立展示 -->
+        <div class="flex justify-center gap-2 mt-6 mb-16" id="bottomDots">
+            <span class="slide-dot active" data-index="0"></span>
+            <span class="slide-dot" data-index="1"></span>
+            <span class="slide-dot" data-index="2"></span>
+            <span class="slide-dot" data-index="3"></span>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-4">发明•创新•优化的模拟集成电路发展历程</p>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="fixed bottom-8 right-8 bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <script>
+        let currentIndex = 0;
+        const totalSlides = 4;
+        const slideList = document.getElementById('slideList');
+        const slideWrap = document.getElementById('slideWrap');
+        const slideItems = document.querySelectorAll('.slide-item');
+        const topDots = document.querySelectorAll('#topDots .slide-dot');
+        const bottomDots = document.querySelectorAll('#bottomDots .slide-dot');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        // 计算轮播内容高度
+        function updateWrapHeight() {
+            const activeItem = slideItems[currentIndex];
+            const content = activeItem.firstElementChild;
+            const contentHeight = content.scrollHeight;
+            const dotsMargin = 24;
+            slideWrap.style.height = (contentHeight + dotsMargin) + 'px';
+        }
+
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+            currentIndex = index;
+            slideList.style.transform = `translateX(-${currentIndex * 100}%)`;
+            updateDots();
+            updateWrapHeight();
+        }
+
+        // 同步上下圆点激活状态
+        function updateDots() {
+            topDots.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
+            bottomDots.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
+        }
+
+        // 初始化 & 窗口监听
+        window.addEventListener('load', updateWrapHeight);
+        window.addEventListener('resize', updateWrapHeight);
+
+        // 左右切换按钮
+        prevBtn.addEventListener('click', () => currentIndex > 0 && goToSlide(currentIndex - 1));
+        nextBtn.addEventListener('click', () => currentIndex < totalSlides - 1 && goToSlide(currentIndex + 1));
+
+        // 顶部圆点点击
+        topDots.forEach((dot, i) => dot.addEventListener('click', () => goToSlide(i)));
+        // 底部圆点点击
+        bottomDots.forEach((dot, i) => dot.addEventListener('click', () => goToSlide(i)));
+
+        // 触摸滑动逻辑
+        let startX = 0, moveX = 0, isTouching = false;
+        slideList.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            isTouching = true;
+            slideList.style.transition = 'none';
+        });
+        slideList.addEventListener('touchmove', e => {
+            if (!isTouching) return;
+            moveX = e.touches[0].clientX - startX;
+            if (currentIndex === 0 && moveX > 0) moveX *= 0.2;
+            if (currentIndex === totalSlides - 1 && moveX < 0) moveX *= 0.2;
+            slideList.style.transform = `translateX(calc(-${currentIndex * 100}% + ${moveX}px))`;
+        });
+        slideList.addEventListener('touchend', () => {
+            isTouching = false;
+            slideList.style.transition = 'transform 0.5s ease-out';
+            if (moveX > 60) goToSlide(currentIndex - 1);
+            else if (moveX < -60) goToSlide(currentIndex + 1);
+            moveX = 0;
+        });
+
+        // 返回顶部
+        const backToTopBtn = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            backToTopBtn.classList.toggle('opacity-100', window.scrollY > 300);
+        });
+        backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    </script>
+</body>
+</html>
