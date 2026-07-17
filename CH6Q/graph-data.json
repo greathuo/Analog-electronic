@@ -1,0 +1,346 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "name": "什么是模拟集成电路？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 2,
+      "name": "模拟集成电路分为哪两类？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 3,
+      "name": "通用模拟集成电路由哪些模块构成？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 4,
+      "name": "集成运放内部的核心单元是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 5,
+      "name": "集成电路工艺限制带来哪些电路设计约束？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 6,
+      "name": "电流源电路在模拟集成电路中有什么用途？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 7,
+      "name": "BJT镜像电流源与MOS镜像电流源工作原理是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 8,
+      "name": "镜像电流源存在什么工程缺陷？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 9,
+      "name": "比例电流源、微电流源、威尔逊电流源如何解决镜像电流源的问题？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 10,
+      "name": "威尔逊电流源相比基础镜像电流源精度更高的原因是什么？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 11,
+      "name": "多路电流源如何实现多路不同大小恒定电流输出？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 12,
+      "name": "作为有源负载，电流源大幅提升放大电路增益的原理是什么？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 13,
+      "name": "差分放大电路抑制温漂的思路是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 14,
+      "name": "差模信号、共模信号对差分电路作用有何区别？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 15,
+      "name": "差分放大电路输入输出接法如何区分？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 16,
+      "name": "双端输出与单端输出差分电路的共模抑制比有什么差异？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 17,
+      "name": "集成电路中为什么使用恒流源替代射极电阻？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 18,
+      "name": "CMOS差放单端输出却拥有双端输出共模抑制效果的原因是什么？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 19,
+      "name": "CE-CB、CC-CB组合差分电路分别优化了差分电路哪些性能？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 20,
+      "name": "哪些方法可以解决差放电路失调与温漂？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 21,
+      "name": "功放与电压放大区别是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 22,
+      "name": "不同类型功放的特点、效率是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 23,
+      "name": "甲类功放最大理论效率仅为50%的原因是什么？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 24,
+      "name": "乙类OCL电路为何会产生交越失真？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 25,
+      "name": "Ube倍增电路比二极管偏置电路有什么优势？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 26,
+      "name": "OTL、OCL、BTL功放适用场景是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 27,
+      "name": "乙类OCL功率管选型需要满足哪些要求？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 28,
+      "name": "D类功放高效率的原理是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 29,
+      "name": "如何化整为零的分析LM741组成结构？",
+      "type": "包含",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 30,
+      "name": "电流源、差放、功放在集成运放中分别承担什么作用？",
+      "type": "因果",
+      "color": "#9C27B0"
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2,
+      "relation": "基础延伸"
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "relation": "组成拆解"
+    },
+    {
+      "source": 3,
+      "target": 4,
+      "relation": "细分特例"
+    },
+    {
+      "source": 1,
+      "target": 5,
+      "relation": "设计约束前置"
+    },
+    {
+      "source": 5,
+      "target": 6,
+      "relation": "解决方案"
+    },
+    {
+      "source": 6,
+      "target": 7,
+      "relation": "基础电路"
+    },
+    {
+      "source": 7,
+      "target": 8,
+      "relation": "问题推导"
+    },
+    {
+      "source": 8,
+      "target": 9,
+      "relation": "改进方案"
+    },
+    {
+      "source": 9,
+      "target": 10,
+      "relation": "深度原理"
+    },
+    {
+      "source": 9,
+      "target": 11,
+      "relation": "拓展应用"
+    },
+    {
+      "source": 6,
+      "target": 12,
+      "relation": "核心应用价值"
+    },
+    {
+      "source": 5,
+      "target": 13,
+      "relation": "痛点引出"
+    },
+    {
+      "source": 13,
+      "target": 14,
+      "relation": "信号分类基础"
+    },
+    {
+      "source": 14,
+      "target": 15,
+      "relation": "电路分类依据"
+    },
+    {
+      "source": 15,
+      "target": 16,
+      "relation": "性能对比分析"
+    },
+    {
+      "source": 16,
+      "target": 17,
+      "relation": "优化思路"
+    },
+    {
+      "source": 17,
+      "target": 18,
+      "relation": "进阶优化电路"
+    },
+    {
+      "source": 18,
+      "target": 19,
+      "relation": "组合升级方案"
+    },
+    {
+      "source": 16,
+      "target": 20,
+      "relation": "缺陷解决"
+    },
+    {
+      "source": 1,
+      "target": 21,
+      "relation": "单元分支"
+    },
+    {
+      "source": 21,
+      "target": 22,
+      "relation": "分类梳理"
+    },
+    {
+      "source": 22,
+      "target": 23,
+      "relation": "性能根源分析"
+    },
+    {
+      "source": 22,
+      "target": 24,
+      "relation": "缺陷与改良"
+    },
+    {
+      "source": 24,
+      "target": 25,
+      "relation": "改良电路优化"
+    },
+    {
+      "source": 24,
+      "target": 26,
+      "relation": "不同架构对比"
+    },
+    {
+      "source": 26,
+      "target": 27,
+      "relation": "器件选型依据"
+    },
+    {
+      "source": 22,
+      "target": 28,
+      "relation": "新型功放分支"
+    },
+    {
+      "source": 4,
+      "target": 29,
+      "relation": "综合实例对应"
+    },
+    {
+      "source": 12,
+      "target": 30,
+      "relation": "综合应用"
+    },
+    {
+      "source": 19,
+      "target": 30,
+      "relation": "综合应用"
+    },
+    {
+      "source": 25,
+      "target": 30,
+      "relation": "综合应用"
+    },
+    {
+      "source": 29,
+      "target": 30,
+      "relation": "整体总结"
+    }
+  ]
+}

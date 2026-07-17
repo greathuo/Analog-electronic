@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>第四章问题图谱</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      padding: 8px;
+      font-family: "微软雅黑", sans-serif;
+      background: #f9f9f9;
+      /* 禁止页面滚动溢出 */
+      overflow: hidden;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 16px;
+      margin: 8px 0;
+      color: #333;
+    }
+
+    .legend {
+      padding: 0;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    #graph {
+      width: 100%;
+      height: calc(100vh - 100px);
+      background: transparent !important;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .node { cursor: pointer; }
+    .node-text { font-size: 11px; pointer-events: none; fill: #333; }
+    .link-text { font-size: 9px; fill: #666; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
+
+    /* 移动端全局样式适配 */
+    @media (max-width: 480px) {
+      body { padding: 4px; }
+      h2 { font-size: 14px; }
+      .node-text { font-size: 9px; }
+      .link-text { font-size: 7px; }
+      .legend { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <h2>第四章问题图谱</h2>
+
+  <div class="legend">
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-color" style="background:#FF9800"></div> 为什么</div>
+      <div class="legend-item"><div class="legend-color" style="background:#4CAF50"></div> 是什么</div>
+      <div class="legend-item"><div class="legend-color" style="background:#2196F3"></div> 怎么做</div>
+      <div class="legend-item"><div class="legend-color" style="background:#9C27B0"></div> 有何用</div>
+    </div>
+  </div>
+
+  <div id="graph"></div>
+
+  <script>
+    // 防抖：resize 频繁触发时延迟执行，提升移动端性能
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderGraph, 150);
+    });
+
+    // 页面初次加载渲染
+    renderGraph();
+
+    function renderGraph() {
+      d3.select("#graph").selectAll("*").remove();
+      const container = document.getElementById("graph");
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const margin = 15;
+
+      const linkColorMap = {
+        "前置": "#2196F3",
+        "并列": "#4CAF50",
+        "推导": "#FF9800",
+        "应用": "#9C27B0",
+        "包含": "#E91E63",
+        "改善": "#f44336",
+        "基础": "#607D8B"
+      };
+
+      const svg = d3.select("#graph")
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .style("background", "transparent");
+
+      const g = svg.append("g");
+      const zoom = d3.zoom()
+        .scaleExtent([0.25, 3])
+        .on("zoom", (e) => {
+          g.attr("transform", e.transform);
+        });
+      svg.call(zoom);
+
+      d3.json("graph-data.json").then(data => {
+        // ========== 1. 动态区分 移动端/PC 力导向参数，解决扎堆问题 ==========
+        const isMobile = width <= 480;
+        // 基础参数：连线距离、排斥力、碰撞半径、布局重心
+        const linkDistance = isMobile ? 65 : 58;
+        const chargeStrength = isMobile ? -260 : -220;
+        const collideRadius = isMobile ? 32 : 28;
+        // 布局重心：移动端居中，PC偏上，避免垂直列队
+        const centerY = isMobile ? height / 2 : height * 0.28;
+
+        const simulation = d3.forceSimulation(data.nodes)
+          // 连线距离：拉开节点，防止水平/垂直成排
+          .force("link", d3.forceLink(data.links).id(d => d.id).distance(linkDistance))
+          // 粒子排斥力：增强互斥，打散线性排列
+          .force("charge", d3.forceManyBody().strength(chargeStrength))
+          // 中心引力
+          .force("center", d3.forceCenter(width / 2, centerY))
+          // 碰撞检测：强制节点不重叠，彻底解决扎堆
+          .force("collide", d3.forceCollide().radius(collideRadius).iterations(3))
+          // 新增：XY轴微弱扰动力，破坏水平/垂直直线排列
+          .force("x", d3.forceX(width / 2).strength(0.08))
+          .force("y", d3.forceY(centerY).strength(0.08))
+          .alphaDecay(0.08)
+          .alpha(1); // 初始活力拉满，充分打散
+
+        // ========== 2. 初始化节点随机偏移，从源头避免初始列队 ==========
+        data.nodes.forEach(node => {
+          // 给每个节点随机初始位置，打破规整行列
+          node.x = width * (0.2 + Math.random() * 0.6);
+          node.y = height * (0.15 + Math.random() * 0.7);
+        });
+
+        // 绘制连线
+        const link = g.append("g").selectAll("line")
+          .data(data.links).enter().append("line")
+          .attr("stroke-width", isMobile ? 1.2 : 1.6)
+          .attr("stroke", d => linkColorMap[d.type] || "#999")
+          .attr("opacity", 0.8);
+
+        // 连线文字
+        const linkText = g.append("g").selectAll("text")
+          .data(data.links).enter().append("text")
+          .attr("class", "link-text")
+          .text(d => d.type);
+
+        // 节点圆点
+        const node = g.append("g").selectAll("circle")
+          .data(data.nodes).enter().append("circle")
+          .attr("class", "node")
+          .attr("r", isMobile ? 8 : 9) // 移动端节点略小
+          .attr("fill", d => d.color)
+          .call(d3.drag().on("start", drag).on("drag", drag).on("end", dragEnd));
+
+        // 节点文字
+        const text = g.append("g").selectAll("text")
+          .data(data.nodes).enter().append("text")
+          .attr("class", "node-text")
+          .attr("dx", isMobile ? 8 : 10)
+          .attr("dy", 4)
+          .text(d => d.name);
+
+        // 点击高亮逻辑
+        node.on("click", (e, d) => {
+          const connected = new Set();
+          data.links.forEach(l => {
+            if (l.source.id === d.id) connected.add(l.target.id);
+            if (l.target.id === d.id) connected.add(l.source.id);
+          });
+          node.attr("opacity", n => n.id === d.id || connected.has(n.id) ? 1 : 0.1);
+          text.attr("opacity", n => n.id === d.id || connected.has(n.id) ? 1 : 0.1);
+          link.attr("opacity", l => l.source.id === l.target.id || l.source.id === d.id || l.target.id === d.id ? 1 : 0.1);
+          linkText.attr("opacity", l => l.source.id === l.target.id || l.source.id === d.id || l.target.id === d.id ? 1 : 0.1);
+        });
+
+        // 空白处重置高亮
+        svg.on("click", (e) => {
+          if (e.target === svg.node()) {
+            node.attr("opacity", 1);
+            text.attr("opacity", 1);
+            link.attr("opacity", 0.8);
+            linkText.attr("opacity", 1);
+          }
+        });
+
+        // 拖拽逻辑
+        function drag(e, d) {
+          if (!e.active) simulation.alphaTarget(0.3).restart();
+          d.fx = Math.max(margin, Math.min(width - margin, e.x));
+          d.fy = Math.max(margin, Math.min(height - margin, e.y));
+        }
+        function dragEnd(e, d) {
+          if (!e.active) simulation.alphaTarget(0);
+          d.fx = null; d.fy = null;
+        }
+
+        // 动画更新
+        simulation.on("tick", () => {
+          link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+              .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+          linkText
+            .attr("x", d => (d.source.x + d.target.x) / 2)
+            .attr("y", d => (d.source.y + d.target.y) / 2)
+            .attr("transform", d => {
+              const dx = d.target.x - d.source.x;
+              const dy = d.target.y - d.source.y;
+              let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+              if (angle > 90) angle -= 180;
+              if (angle < -90) angle += 180;
+              return `rotate(${angle} ${(d.source.x + d.target.x) / 2} ${(d.source.y + d.target.y) / 2})`;
+            });
+
+          node.attr("cx", d => d.x = Math.max(margin, Math.min(width - margin, d.x)))
+              .attr("cy", d => d.y = Math.max(margin, Math.min(height - margin, d.y)));
+
+          text.attr("x", d => d.x).attr("y", d => d.y);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

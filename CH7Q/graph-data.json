@@ -1,0 +1,369 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "name": "滤波电路的功能是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 2,
+      "name": "无源滤波器和有源滤波器有哪些区别？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 3,
+      "name": "不同滤波器适用场景是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 4,
+      "name": "通带、阻带、过渡带的概念是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 5,
+      "name": "一阶有源低通滤波电路的结构与传递函数是什么？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 6,
+      "name": "一阶高通滤波与一阶低通电路存在怎样的对偶关系？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 7,
+      "name": "如何改善一阶滤波器过渡带衰减较低的问题",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 8,
+      "name": "Sallen-Key二阶低通滤波器的稳定条件是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 9,
+      "name": "品质因数对二阶滤波器幅频特性有什么影响？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 10,
+      "name": "无限增益多路反馈二阶滤波器有哪些优缺点？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 11,
+      "name": "二阶高通、带通、带阻滤波器如何由低通电路变换得到？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 12,
+      "name": "双T型带阻滤波器稳定工作的增益范围是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 13,
+      "name": "什么是开关电容？如何用开关电容等效大电阻？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 14,
+      "name": "开关电容滤波电路有什么工程优势？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 15,
+      "name": "电压比较器与线性运放电路工作状态有何区别？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 16,
+      "name": "单门限比较器存在什么缺陷？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 17,
+      "name": "迟滞比较器中正反馈起到什么作用？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 18,
+      "name": "为何迟滞比较器的抗干扰能力优于单门限比较器？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 19,
+      "name": "窗口比较器电路如何实现双门限检测？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 20,
+      "name": "正弦波振荡电路的各组成部分有什么作用？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 21,
+      "name": "正弦波振荡的相位平衡、幅度平衡、起振条件分别是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 22,
+      "name": "如何给出RC文氏桥振荡电路选频网络的传递函数？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 23,
+      "name": "文氏桥电路如何利用非线性电阻实现稳幅？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 24,
+      "name": "RC、LC、石英晶体振荡电路频率稳定度差异原因是什么？",
+      "type": "为什么",
+      "color": "#FF9800"
+    },
+    {
+      "id": 25,
+      "name": "电容三点式LC振荡电路相位条件如何判断？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 26,
+      "name": "石英晶体串联谐振、并联谐振的工作原理是什么？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 27,
+      "name": "矩形波发生电路充放电过程如何产生高低电平交替变换？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 28,
+      "name": "如何改造矩形波发生电路实现占空比可调？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 29,
+      "name": "三角波发生电路中的迟滞比较器与积分器如何配合？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 30,
+      "name": "三角波改锯齿波的改造思路是什么？",
+      "type": "怎么做",
+      "color": "#2196F3"
+    },
+    {
+      "id": 31,
+      "name": "压控振荡器的输入电压如何控制输出振荡频率？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 32,
+      "name": "电荷平衡式与复位式压控振荡器有什么区别？",
+      "type": "是什么",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 33,
+      "name": "滤波电路、比较器、波形发生电路有哪些工程应用？",
+      "type": "有何用",
+      "color": "#9C27B0"
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2,
+      "relation": "基础"
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "relation": "包含"
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "relation": "前置概念"
+    },
+    {
+      "source": 3,
+      "target": 5,
+      "relation": "分支"
+    },
+    {
+      "source": 5,
+      "target": 6,
+      "relation": "并列对偶"
+    },
+    {
+      "source": 5,
+      "target": 7,
+      "relation": "推导结论"
+    },
+    {
+      "source": 7,
+      "target": 8,
+      "relation": "解决方案"
+    },
+    {
+      "source": 8,
+      "target": 9,
+      "relation": "参数影响"
+    },
+    {
+      "source": 8,
+      "target": 10,
+      "relation": "同类对比"
+    },
+    {
+      "source": 8,
+      "target": 11,
+      "relation": "拓展变换"
+    },
+    {
+      "source": 11,
+      "target": 12,
+      "relation": "分支细节"
+    },
+    {
+      "source": 2,
+      "target": 13,
+      "relation": "改进方案"
+    },
+    {
+      "source": 13,
+      "target": 14,
+      "relation": "工程价值"
+    },
+    {
+      "source": 1,
+      "target": 33,
+      "relation": "应用延伸"
+    },
+    {
+      "source": 15,
+      "target": 16,
+      "relation": "基础分支"
+    },
+    {
+      "source": 16,
+      "target": 17,
+      "relation": "改进方案"
+    },
+    {
+      "source": 16,
+      "target": 18,
+      "relation": "缺陷解决"
+    },
+    {
+      "source": 17,
+      "target": 19,
+      "relation": "拓展电路"
+    },
+    {
+      "source": 15,
+      "target": 33,
+      "relation": "应用延伸"
+    },
+    {
+      "source": 20,
+      "target": 21,
+      "relation": "核心规则"
+    },
+    {
+      "source": 21,
+      "target": 22,
+      "relation": "实例推导"
+    },
+    {
+      "source": 22,
+      "target": 23,
+      "relation": "稳幅优化"
+    },
+    {
+      "source": 21,
+      "target": 24,
+      "relation": "分类对比"
+    },
+    {
+      "source": 24,
+      "target": 25,
+      "relation": "LC实例"
+    },
+    {
+      "source": 24,
+      "target": 26,
+      "relation": "晶振实例"
+    },
+    {
+      "source": 20,
+      "target": 33,
+      "relation": "应用延伸"
+    },
+    {
+      "source": 17,
+      "target": 27,
+      "relation": "电路组成基础"
+    },
+    {
+      "source": 27,
+      "target": 28,
+      "relation": "参数计算"
+    },
+    {
+      "source": 27,
+      "target": 29,
+      "relation": "波形变换"
+    },
+    {
+      "source": 29,
+      "target": 30,
+      "relation": "波形改造"
+    },
+    {
+      "source": 29,
+      "target": 31,
+      "relation": "功能拓展"
+    },
+    {
+      "source": 31,
+      "target": 32,
+      "relation": "电路分类"
+    },
+    {
+      "source": 27,
+      "target": 33,
+      "relation": "应用延伸"
+    }
+  ]
+}
